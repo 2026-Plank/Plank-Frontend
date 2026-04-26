@@ -220,7 +220,7 @@ const TaskWapper = styled.div`
     gap: 10px;
     flex-shrink: 0;
     border-radius: 16px;
-    border: 1px solid var(--Gray-5, #C9C9C8);
+    border: 1px solid #B9B9B9;
     background: var(--white-1, #FFF);
 `;
 const TaskDate = styled.span`

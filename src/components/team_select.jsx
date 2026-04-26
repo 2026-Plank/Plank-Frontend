@@ -39,13 +39,19 @@ const MainWapper = styled.div`
     align-items: center;
     flex-direction: column;
 `;
+const SelectForm = styled.form`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
 const RoleBox = styled.div`
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
     margin: 40px 0 40px 0;
-    width: 80%;
+    width: 100%;
+    height: 160px;
 `;
 const RoleCard = styled.div`
     display: flex;
@@ -60,6 +66,13 @@ const RoleCard = styled.div`
     background: var(--Gray-3, #F8F8F8);
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
     cursor: pointer;
+
+    ${({ $active }) => $active && `
+    border-radius: 20px;
+    border: 1px solid var(--Light-Green-2, #C0DA58);
+    background: var(--white-1, #FFF);
+    box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.40);
+    `}
 
     &:hover{
         border-radius: 20px;
@@ -110,6 +123,38 @@ export default function TeamSelectPage(){
         Object.fromEntries(roles.map((role) => [role, ""]))
     );
 
+    const SendSelectedRole = async (e) => {
+        e.preventDefault(); // 폼 기본 동작 방지
+
+        if (!selectedRole) {
+            alert("부서를 선택해주세요.");
+            return;
+        }
+        // 선택된 역할 + 상세 직무 저장
+        const result = {
+            role: selectedRole,
+            detail: details[selectedRole],
+        };
+        try{
+            const res = await fetch("주소/team-select", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(result),
+            });
+
+            if(!res.ok){
+                console.log("팀 저장 실패");
+                return;
+            }
+            navigate("/project");
+        } catch(err){
+            alert("선택이 제대로 되었는지 확인해주세요!");
+            console.log(err);
+        }
+    };
+
     return(
         <>
             <GlobalStyle />
@@ -123,24 +168,26 @@ export default function TeamSelectPage(){
                     <MainWapper>
                         <Logo src={plank_logo} />
                         <Title>부서 선택</Title>
-                        <RoleBox>
-                            {roles.map((role) => (
-                                <RoleCard
-                                    key={role}
-                                    $active={selectedRole === role}
-                                    onClick={() => setSelectedRole(role)}
-                                >
-                                    <RoleTitle>{role}</RoleTitle>
-                                    <RoleInput
-                                        placeholder="상세 직무 입력"
-                                        value={details[role]}
-                                        onChange={(e) => setDetails(prev => ({ ...prev, [role]: e.target.value }))}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                </RoleCard>
-                            ))}
-                        </RoleBox>
-                        <SumbitButton type="submit">선택 완료</SumbitButton>
+                        <SelectForm onSubmit={SendSelectedRole}>
+                            <RoleBox>
+                                {roles.map((role) => (
+                                    <RoleCard
+                                        key={role}
+                                        $active={selectedRole === role}
+                                        onClick={() => setSelectedRole(role)}
+                                    >
+                                        <RoleTitle>{role}</RoleTitle>
+                                        <RoleInput
+                                            placeholder="상세 직무 입력"
+                                            value={details[role]}
+                                            onChange={(e) => setDetails(prev => ({ ...prev, [role]: e.target.value }))}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </RoleCard>
+                                ))}
+                            </RoleBox>
+                            <SumbitButton type="submit">선택 완료</SumbitButton>
+                        </SelectForm>
                     </MainWapper>
                 </Container>
             </Wapper>

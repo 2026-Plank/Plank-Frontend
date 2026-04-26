@@ -75,7 +75,12 @@ const FloatingWrapper = styled(InputWrapper)`
     }
 `
 
-// 🔥 버튼으로 변경 (중요)
+const LoginForm = styled.form`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`
+
 const LoginButton = styled.button`
     width: 538px;
     height: 90px;
@@ -125,18 +130,39 @@ export default function Login() {
         return '';
     };
 
-    const handleLogin = () => {
-        const err = validate();
-        if (err) {
-            alert(err);
+    const handleLogin = async (e) => {
+        e.preventDefault();
+
+        const errMsg = validate();
+        if (errMsg) {
+            alert(errMsg);
             return;
         }
 
-        if (id === 'test' && password === '1234') {
+        try{
+            //API 주소 꼭 입력
+            const res = await fetch("주소/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({id, password}),
+            });
+
+            if(!res.ok){
+                alert("아이디 또는 비번이 틀렸습니다!");
+                return;
+            }
+            // 토큰 넣을 때만 주석 해제 안 넣을 시 코드 삭제
+            // const data = await res.json();
+            // localStorage.setItem("token", data.token);
             alert('로그인 성공');
-            navigate('/homePage');
-        } else {
-            alert('아이디 또는 비밀번호가 틀렸습니다');
+            setTimeout(() => {
+                navigate('/homePage');
+            }, 500);
+        } catch(err){
+            alert("로그인 실패");
+            console.log(err);
         }
     };
 
@@ -148,29 +174,31 @@ export default function Login() {
             <Container>
                 <Logo src={logo} alt="logo" />
 
-                <FloatingWrapper>
-                    <Input
-                        placeholder=" "
-                        value={id}
-                        onChange={(e) => setId(e.target.value)}
-                    />
-                    <Label>아이디</Label>
-                </FloatingWrapper>
+                <LoginForm onSubmit={handleLogin}>
+                    <FloatingWrapper>
+                        <Input
+                            placeholder=" "
+                            value={id}
+                            onChange={(e) => setId(e.target.value)}
+                        />
+                        <Label>아이디</Label>
+                    </FloatingWrapper>
 
-                <FloatingWrapper>
-                    <Input
-                        type="password"
-                        placeholder=" "
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <Label>비밀번호</Label>
-                </FloatingWrapper>
+                    <FloatingWrapper>
+                        <Input
+                            type="password"
+                            placeholder=" "
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <Label>비밀번호</Label>
+                    </FloatingWrapper>
 
-                <LoginButton onClick={handleLogin} disabled={isDisabled}>
-                    로그인
-                </LoginButton>
-
+                    <LoginButton type="submit" disabled={isDisabled}>
+                        로그인
+                    </LoginButton>
+                </LoginForm>
+                
                 <LinkGroup>
                     <SubLink to="/#">아이디 찾기</SubLink>
                     <Divider>|</Divider>
