@@ -139,17 +139,19 @@ export default function Login() {
             return;
         }
 
-        try{
+        try {
             //API 주소 꼭 입력
-            const res = await fetch("주소/login", {
+            const res = await fetch("http://localhost:3000/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({id, password}),
+                body: JSON.stringify({
+                    userId: id,
+                    pw: password
+                }),
             });
-
-            if(!res.ok){
+            if (!res.ok) {
                 alert("아이디 또는 비번이 틀렸습니다!");
                 return;
             }
@@ -160,7 +162,7 @@ export default function Login() {
             setTimeout(() => {
                 navigate('/homePage');
             }, 500);
-        } catch(err){
+        } catch (err) {
             alert("로그인 실패");
             console.log(err);
         }
@@ -198,7 +200,7 @@ export default function Login() {
                         로그인
                     </LoginButton>
                 </LoginForm>
-                
+
                 <LinkGroup>
                     <SubLink to="/#">아이디 찾기</SubLink>
                     <Divider>|</Divider>
