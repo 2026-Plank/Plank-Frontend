@@ -129,22 +129,17 @@ export default function Signup() {
         e.preventDefault();
 
         const errMsg = validate();
-        if(errMsg){
+        if (errMsg) {
             alert(errMsg);
             return;
         }
-        try{
-            //API 주소 꼭 변경 후 진행
-            const res = await fetch("주소/sign", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({id, password, email}),
-            });
+        try {
+            const res = await fetch("http://localhost:3000/sign", 
+                { method: "POST", headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ userId: id, pw: password, email, name: id }), });
 
             //
-            if(!res.ok){
+            if (!res.ok) {
                 alert("아이디,비밀번호 또는 이메일이 형식에 맞지 않습니다.\n다시 입력해주세요!");
                 console.log("API 접근 실패");
                 return;
@@ -153,7 +148,7 @@ export default function Signup() {
             setTimeout(() => {
                 navigate('/');
             }, 500);
-        }catch(err){
+        } catch (err) {
             alert("회원가입 실패");
             console.log("정보 저장 실패", err);
         }
