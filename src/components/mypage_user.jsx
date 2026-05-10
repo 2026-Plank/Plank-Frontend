@@ -16,7 +16,7 @@ import icon from '../assets/icon.svg';
 import in_icon from '../assets/in_icon.svg';
 import alarm from '../assets/alarm.svg';
 import logo from '../assets/logo.svg';
-import profile from '../assets/profile.svg'; 
+import profile from '../assets/profile.svg';
 
 /* --- Global Styles --- */
 export const GlobalStyle = createGlobalStyle`
@@ -120,9 +120,39 @@ export default function mypage_user() {
         { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
     ];
 
-    const handleSave = () => {
-        alert("저장되었습니다.");
-        navigate("/mypage"); // 로그인 페이지 경로 (보통 / 혹은 /login)
+    const handleSave = async () => {
+        const token = localStorage.getItem("token");
+
+        const body = {};
+
+        if (name.trim() !== "") body.name = name;
+        if (job.trim() !== "") body.job = job;
+        if (statusMsg.trim() !== "") body.status = statusMsg;
+
+        const res = await fetch("http://localhost:3000/api/users/profile", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        console.log("응답:", data);
+
+        const prevUser = JSON.parse(localStorage.getItem("user")) || {};
+
+        const updatedUser = {
+            ...prevUser,
+            ...data.user
+        };
+
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        alert("저장 완료");
+        navigate("/mypage");
     };
 
     return (
@@ -151,30 +181,30 @@ export default function mypage_user() {
             <MainContent>
                 <FormContainer>
                     <ProfileWrapper>
-                        <ProfileCircle /> 
+                        <ProfileCircle />
                         <ChangePhotoButton>사진 변경</ChangePhotoButton>
                     </ProfileWrapper>
 
                     <InputGroup>
                         <Label>이름</Label>
-                        <Input 
-                            type="text" placeholder="이름을 입력해주세요." 
+                        <Input
+                            type="text" placeholder="이름을 입력해주세요."
                             value={name} onChange={(e) => setName(e.target.value)}
                         />
                     </InputGroup>
 
                     <InputGroup>
                         <Label>직무</Label>
-                        <Input 
-                            type="text" placeholder="직무를 입력해주세요." 
+                        <Input
+                            type="text" placeholder="직무를 입력해주세요."
                             value={job} onChange={(e) => setJob(e.target.value)}
                         />
                     </InputGroup>
 
                     <InputGroup>
                         <Label>상태 메시지</Label>
-                        <Input 
-                            type="text" placeholder="상태 메시지를 작성해주세요." 
+                        <Input
+                            type="text" placeholder="상태 메시지를 작성해주세요."
                             value={statusMsg} onChange={(e) => setStatusMsg(e.target.value)}
                         />
                     </InputGroup>

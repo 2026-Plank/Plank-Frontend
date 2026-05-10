@@ -1,4 +1,4 @@
-import logo from '../assets/logo.svg';
+import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';

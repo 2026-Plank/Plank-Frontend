@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -64,6 +65,47 @@ const Background = styled.div`
     transition: 0.3s;
     ${Menu}:hover & { width: 272px; height: 52px; border-radius: 8px; left: 20px; }
 `;
+
+const StateMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+
+  width: 160px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 0;
+
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  z-index: 999;
+`;
+
+const StateItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 16px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`;
+
+const Dot = styled.div`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #${props => props.color};
+`;
+
+const Label = styled.span`
+  font-size: 14px;
+  color: #333;
+`;
+
 const Icon = styled.img` width: 28px; height: 28px; margin-left: 21px; z-index: 2; `;
 const Text = styled.span` margin-left: 40px; font-size: 16px; color: #333; font-weight: 500; opacity: 0; transform: translateX(-10px); transition: 0.3s; z-index: 2; white-space: nowrap; `;
 const Line = styled.div` width: 60px; height: 1px; background-color: #c9c9c8; margin: 40px 0; transition: 0.3s; ${Menu}:hover & { width: 240px; } `;
