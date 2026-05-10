@@ -1,7 +1,7 @@
-import logo from '../assets/logo.svg';
+import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import logo from '../assets/logo.svg';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -155,9 +155,13 @@ export default function Login() {
                 alert("아이디 또는 비번이 틀렸습니다!");
                 return;
             }
-            // 토큰 넣을 때만 주석 해제 안 넣을 시 코드 삭제
-            // const data = await res.json();
-            // localStorage.setItem("token", data.token);
+
+            const data = await res.json();
+            console.log("로그인 응답:", data);
+
+            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("token", data.token);
+
             alert('로그인 성공');
             setTimeout(() => {
                 navigate('/homePage');
