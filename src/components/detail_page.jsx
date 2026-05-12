@@ -388,7 +388,7 @@ export default function TeamDetailPage() {
     { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
   ];
 
-  const isAlarmActive = location.pathname === "/alarm";
+  const isAlarmActive = location.pathname === "/notification";
 
   const initialTeam = {
     id: location.state?.team?.id || localStorage.getItem("teamId") || null,
@@ -440,7 +440,11 @@ export default function TeamDetailPage() {
           }));
           setTeam((prev) => ({
             ...prev,
-            ...data,
+            title: data.name || prev.title,
+            period: data.deadline || prev.period,
+            charge: data.dpLeader || prev.charge,
+            code: data.teamCode || prev.code,
+            description: data.dpName || prev.description,
             members: normalizedMembers
           }));
         }
@@ -602,7 +606,7 @@ export default function TeamDetailPage() {
             );
           })}
           <Line />
-          <Item onClick={() => navigate("/alarm")}>
+          <Item onClick={() => navigate("/notification")}>
             <Background $active={isAlarmActive} />
             <Icon src={alarm} />
             <Text className="text">NOTIFICATIONS</Text>
@@ -669,7 +673,7 @@ export default function TeamDetailPage() {
                   team.members.reduce((acc, member) => {
                     const teams = Array.isArray(member.join_team)
                       ? member.join_team
-                      : `${member.join_team || ""}`.split(",").map((item) => item.trim()).filter(Boolean);
+                      : `${member.join_team || member.department || member.role || ""}`.split(",").map((item) => item.trim()).filter(Boolean);
                     teams.forEach((teamKey) => {
                       if (!acc[teamKey]) acc[teamKey] = [];
                       acc[teamKey].push(member);
