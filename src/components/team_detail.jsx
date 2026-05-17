@@ -381,9 +381,11 @@ export default function TeamDetailCreatePage(){
                     setCode(data.teamCode || '');
                     setDescription(data.dpName || data.name || '');
                     setMembers((data.members || []).map((member) => ({
-                        id: member.USERID,
-                        name: member.NAME,
-                        role: member.ROLE
+                        id: member.id ?? member.USERID ?? member.userid,
+                        name: member.name ?? member.NAME ?? member.email ?? "알 수 없는 사용자",
+                        role: member.role ?? member.ROLE,
+                        department: member.department,
+                        jobDetail: member.jobDetail
                     })));
                     if (data.deadline) {
                         setStartPeriod(data.deadline);
@@ -438,9 +440,11 @@ export default function TeamDetailCreatePage(){
             });
             const data = response.data.team;
             setMembers((data.members || []).map((member) => ({
-                id: member.USERID,
-                name: member.NAME,
-                role: member.ROLE
+                id: member.id ?? member.USERID ?? member.userid,
+                name: member.name ?? member.NAME ?? member.email ?? "알 수 없는 사용자",
+                role: member.role ?? member.ROLE,
+                department: member.department,
+                jobDetail: member.jobDetail
             })));
         } catch (error) {
             alert(error.response?.data?.error || '초대 실패');
@@ -514,18 +518,20 @@ export default function TeamDetailCreatePage(){
 
     const SetData = async () => {
         try{
+            if (!teamId) {
+                navigate("/project");
+                return;
+            }
             const token = localStorage.getItem('token');
-            const url = editMode ? `/api/teams/${team.id}` : "host이름/join";
-            const method = editMode ? "PUT" : "POST";
-            const res = await fetch(url, {
-                method,
+            const res = await fetch(`/api/teams/${teamId}`, {
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     name: title,
-                    deadline: `${startPeriod} - ${endPeriod}`,
+                    deadline: endPeriod || startPeriod,
                     dpLeader: charge,
                     teamCode: code,
                     dpName: description,
@@ -535,15 +541,17 @@ export default function TeamDetailCreatePage(){
             });
     
             if(res.ok){
-                console.log(editMode ? "팀 수정 성공" : "팀 세부사항 설정 성공");
-                alert(editMode ? "팀 수정 성공" : "팀 설정 성공");
+                console.log("팀 수정 성공");
+                alert("수정 완료");
                 navigate("/project");
             }else{
-                console.log(editMode ? "팀 수정 실패" : "팀 세부사항 설정 실패");
-                alert(editMode ? "팀 수정 실패" : "팀 설정 실패");
+                const errorData = await res.json().catch(() => ({}));
+                console.log("팀 수정 실패", errorData);
+                alert(errorData.error || "수정에 실패했습니다.");
             }
         }catch(err){
             console.error(err);
+            alert("수정 중 오류가 발생했습니다.");
         }
     };
 

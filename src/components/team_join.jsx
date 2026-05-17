@@ -76,9 +76,14 @@ export default function TeamJoin() {
                 console.log("팀 참가 실패!", errorData);
                 alert("팀 참가 실패: " + (errorData.error || "알 수 없는 오류"));
             }else{
+                const data = await res.json();
+                const joinedTeam = data.team;
+                if (joinedTeam?.id) {
+                    localStorage.setItem("teamId", String(joinedTeam.id));
+                }
                 console.log("팀 참가 완료!");
                 alert("팀 참가 성공");
-                navigate("/project"); // 성공 시 프로젝트 페이지로 이동
+                navigate("/team-select", { state: { teamId: joinedTeam?.id, team: joinedTeam } });
             }
         }catch(err){
             console.error(err);
