@@ -166,6 +166,8 @@ const AddIcon = styled.img`
     cursor: pointer;
     background: var(--Gray-4, #E0E0E0);
 `;
+
+const getMemberId = (member) => member?.id ?? member?.userid ?? member?.USERID;
 const UserIcon = styled.img`
     width: 24px;
     height: 24px;
@@ -358,6 +360,9 @@ export default function TeamDetailCreatePage(){
     const [description, setDescription] = useState(team.description);
     const [teamExplan, setTeamExplan] = useState(team.team_explan);
     const [members, setMembers] = useState(team.members);
+    const [originalMemberIds, setOriginalMemberIds] = useState(() =>
+        (team.members ?? []).map((member) => String(getMemberId(member))).filter(Boolean)
+    );
 
     const teamId = team.id || localStorage.getItem("teamId");
 
@@ -376,13 +381,15 @@ export default function TeamDetailCreatePage(){
                     setCharge(data.dpLeader || '');
                     setCode(data.teamCode || '');
                     setDescription(data.dpName || data.name || '');
-                    setMembers((data.members || []).map((member) => ({
+                    const mappedMembers = (data.members || []).map((member) => ({
                         id: member.id ?? member.USERID ?? member.userid,
                         name: member.name ?? member.NAME ?? member.email ?? "알 수 없는 사용자",
                         role: member.role ?? member.ROLE,
                         department: member.department,
                         jobDetail: member.jobDetail
-                    })));
+                    }));
+                    setMembers(mappedMembers);
+                    setOriginalMemberIds(mappedMembers.map((member) => String(getMemberId(member))).filter(Boolean));
                     if (data.deadline) {
                         setStartPeriod(data.deadline);
                         setEndPeriod('');
@@ -516,6 +523,19 @@ export default function TeamDetailCreatePage(){
         }
 
         try {
+            const remainingMemberIds = new Set(
+                members.map((member) => String(getMemberId(member))).filter(Boolean)
+            );
+            const removedMemberIds = originalMemberIds.filter((memberId) => !remainingMemberIds.has(memberId));
+
+            await Promise.all(
+                removedMemberIds.map((memberId) =>
+                    apiRequest(`/api/teams/${teamId}/members/${encodeURIComponent(memberId)}`, {
+                        method: "DELETE",
+                    })
+                )
+            );
+
             await apiRequest(`/api/teams/${teamId}`, {
                 method: "PUT",
                 body: JSON.stringify({

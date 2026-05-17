@@ -49,6 +49,21 @@ const DateInput = styled.input`
     outline: none;
 `;
 
+const DescriptionInput = styled.textarea`
+    display: flex;
+    width: 538px;
+    min-height: 120px;
+    padding: 32px 24px;
+    align-items: center;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
+    border: none;
+    outline: none;
+    resize: vertical;
+    font: inherit;
+`;
+
 export const InputWrapper = styled.div`
     position: relative;
     width: 538px;
@@ -138,6 +153,7 @@ export default function TeamCreate() {
     const navigate = useNavigate();
     const [teamName, setTeamName] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [projectDescription, setProjectDescription] = useState("");
     const [department, setDepartment] = useState("");
 
     const sendTeamData = async (e) => {
@@ -159,6 +175,7 @@ export default function TeamCreate() {
                 body: JSON.stringify({
                     name: teamName.trim(),
                     deadline: toApiDate(endDate),
+                    description: projectDescription.trim(),
                     department: department || "기획자",
                 }),
             });
@@ -201,6 +218,13 @@ export default function TeamCreate() {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </InputWrapper>
+                    <InputWrapper>
+                        <Label>프로젝트 설명</Label>
+                        <DescriptionInput
+                            value={projectDescription}
+                            onChange={(e) => setProjectDescription(e.target.value)}
                         />
                     </InputWrapper>
                     <div>
