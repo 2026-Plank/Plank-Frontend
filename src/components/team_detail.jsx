@@ -66,6 +66,7 @@ import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
+import { apiRequest, toApiDate } from "../utils/api";
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -278,6 +279,7 @@ export default function TeamDetailCreatePage(){
     const [editingCharge, setEditingCharge] = useState(false);
     const [editingCode, setEditingCode] = useState(false);
     const [chargeWidth, setChargeWidth] = useState(0);
+    const [codeWidth, setCodeWidth] = useState(0);
     const chargeRef = useRef(null);
     const codeRef = useRef(null);
 
@@ -379,33 +381,24 @@ export default function TeamDetailCreatePage(){
     };
 
     const SetData = async () => {
-        try{
-            const res = await fetch("host이름/join", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+        if (!team.id) {
+            navigate("/project");
+            return;
+        }
+
+        try {
+            await apiRequest(`/api/teams/${team.id}`, {
+                method: "PUT",
                 body: JSON.stringify({
-                    id: team.id,
-                    title: team.title,
-                    period: `${startPeriod} - ${endPeriod}`,
-                    charge,
-                    code,
-                    description,
-                    members,
-                    teamExplan,
+                    name: team.title,
+                    deadline: toApiDate(endPeriod || startPeriod || team.period),
+                    dpName: charge || description || team.title,
                 }),
             });
-    
-            if(res.ok){
-                console.log("팀 세부사항 설정 성공");
-                alert("팀 설정 성공");
-                navigate("/project");
-            }else{
-                console.log("팀 세부사항 설정 실패");
-                alert("팀 설정 실패");
-            }
-        }catch(err){
+            alert("프로젝트 수정이 완료되었습니다.");
+            navigate("/project");
+        } catch(err) {
+            alert(err.message || "프로젝트 수정에 실패했습니다.");
             console.error(err);
         }
     };

@@ -7,6 +7,7 @@ import { useState } from "react";
 import Backbtn from '../assets/back-button.svg';
 import logo from '../assets/logo.svg';
 import { GlobalStyle } from "../pages/homePage";
+import { apiRequest, getAuthToken, mapApiTeam, toApiDate } from "../utils/api";
 
 //css
 export const Container = styled.div`
@@ -177,23 +178,39 @@ export default function TeamCreate(){
 
     const sendTeamData = async (e) => {
         e.preventDefault();
-        const randomCode = Math.random().toString(36).substring(2, 10).toLowerCase();
-        navigate("/team-modify", {
-            state: {
-                team: {
-                    id: null,
-                    title: teamName,
-                    period: endDate,
-                    code: randomCode,
-                    charge: "",
-                    members: [],
-                    description: "",
-                    team_explan: [],
-                    team_deadline: [],
+
+        if (!teamName.trim() || !endDate.trim()) {
+            alert("프로젝트 이름과 기간을 작성해 주세요.");
+            return;
+        }
+
+        if (!getAuthToken()) {
+            alert("로그인 후 프로젝트를 생성할 수 있습니다.");
+            return;
+        }
+
+        try {
+            const data = await apiRequest("/api/teams/create", {
+                method: "POST",
+                body: JSON.stringify({
+                    name: teamName.trim(),
+                    deadline: toApiDate(endDate),
+                    department: "기획자",
+                }),
+            });
+
+            const team = mapApiTeam(data.team);
+            navigate("/team-select", {
+                state: {
+                    team,
+                    teamId: team.id,
+                    from: "create",
                 },
-                from: "create"
-            }
-        });
+            });
+        } catch (err) {
+            alert(err.message || "프로젝트 생성에 실패했습니다.");
+            console.error(err);
+        }
     
         // if (!teamName.trim() || !endDate.trim()) {
         //     alert("프로젝트 이름과 기간을 작성해 주세요!");
