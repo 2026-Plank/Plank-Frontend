@@ -1,11 +1,11 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
 
 import Backbtn from "../assets/back-button.svg";
 import logo from "../assets/logo.svg";
 import { GlobalStyle } from "../pages/homePage";
+import { apiRequest, getAuthToken, mapApiTeam, toApiDate } from "../utils/api";
 
 export const Container = styled.div`
     margin-top: 40px;
@@ -108,13 +108,6 @@ export const Logo = styled.img`
     height: 136px;
 `;
 
-const Message = styled.div`
-    width: 538px;
-    color: ${({ $error }) => ($error ? "#d9534f" : "#7e9640")};
-    font-size: 14px;
-    font-weight: 600;
-`;
-
 const DepartmentContainer = styled.div`
     display: flex;
     gap: 12px;
@@ -139,40 +132,48 @@ const DepartmentButton = styled.button`
     }
 `;
 
+const departments = ["프로젝트 기획", "UI 디자인", "개발", "품질 보증"];
+
 export default function TeamCreate() {
     const navigate = useNavigate();
     const [teamName, setTeamName] = useState("");
-    const [deadline, setDeadline] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [department, setDepartment] = useState("");
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
-
-    const departments = ["프로젝트 기획", "UI 디자인", "개발", "품질 보증"];
 
     const sendTeamData = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem("token");
-        if (!token) {
-            setError("로그인이 필요합니다.");
+
+        if (!teamName.trim() || !endDate.trim()) {
+            alert("프로젝트 이름과 기간을 작성해 주세요.");
             return;
         }
-        if (!teamName.trim() || !deadline) {
-            setError("프로젝트 이름과 마감일을 입력해주세요.");
+
+        if (!getAuthToken()) {
+            alert("로그인 후 프로젝트를 생성할 수 있습니다.");
             return;
         }
 
         try {
-            const response = await axios.post(
-                "/api/teams/create",
-                { name: teamName.trim(), deadline, department },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            localStorage.setItem("teamId", String(response.data.team.id));
-            setMessage("프로젝트를 생성했어요.");
-            setError("");
-            navigate("/project");
-        } catch (createError) {
-            setError(createError.response?.data?.error || "프로젝트 생성에 실패했습니다.");
+            const data = await apiRequest("/api/teams/create", {
+                method: "POST",
+                body: JSON.stringify({
+                    name: teamName.trim(),
+                    deadline: toApiDate(endDate),
+                    department: department || "기획자",
+                }),
+            });
+
+            const team = mapApiTeam(data.team);
+            navigate("/team-select", {
+                state: {
+                    team,
+                    teamId: team.id,
+                    from: "create",
+                },
+            });
+        } catch (err) {
+            alert(err.message || "프로젝트 생성에 실패했습니다.");
+            console.error(err);
         }
     };
 
@@ -188,14 +189,24 @@ export default function TeamCreate() {
                 <Form onSubmit={sendTeamData}>
                     <InputWrapper>
                         <Label>프로젝트 이름</Label>
-                        <TeamNameInput type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+                        <TeamNameInput
+                            type="text"
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                        />
                     </InputWrapper>
                     <InputWrapper>
                         <Label>마감일</Label>
-                        <DateInput type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                        <DateInput
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
                     </InputWrapper>
                     <div>
-                        <Label style={{position: "static", display: "block", margin: "10px 0"}}>부서 선택</Label>
+                        <Label style={{ position: "static", display: "block", margin: "10px 0" }}>
+                            부서 선택
+                        </Label>
                         <DepartmentContainer>
                             {departments.map((dept) => (
                                 <DepartmentButton
@@ -209,8 +220,6 @@ export default function TeamCreate() {
                             ))}
                         </DepartmentContainer>
                     </div>
-                    {error ? <Message $error>{error}</Message> : null}
-                    {!error && message ? <Message>{message}</Message> : null}
                     <SumbitButton type="submit">생성하기</SumbitButton>
                 </Form>
             </Container>

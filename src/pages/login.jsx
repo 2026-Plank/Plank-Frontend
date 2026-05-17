@@ -2,7 +2,7 @@ import logo from '../assets/logo.svg';
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import axios from 'axios';
+import { setAuthSession } from '../utils/api';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -76,7 +76,6 @@ const FloatingWrapper = styled(InputWrapper)`
     }
 `
 
-// 🔥 버튼으로 변경 (중요)
 const LoginButton = styled.button`
     width: 538px;
     height: 90px;
@@ -137,12 +136,25 @@ export default function Login() {
         }
 
         try {
-            const response = await axios.post('/api/auth/login', { email, password });
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, password }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert('로그인 실패: ' + (data.message || '서버 오류'));
+                return;
+            }
+            const data = await res.json();
+            setAuthSession({ token: data.token, user: data.user });
             alert('로그인 성공');
-            localStorage.setItem('token', response.data.token);
             navigate('/homepage');
-        } catch (error) {
-            alert('로그인 실패: ' + (error.response?.data?.message || '서버 오류'));
+        } catch (err) {
+            alert("로그인 실패");
+            console.error(err);
         }
     };
 

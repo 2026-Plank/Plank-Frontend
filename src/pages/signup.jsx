@@ -2,7 +2,6 @@ import logo from '../assets/logo.svg';
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import axios from 'axios';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -127,16 +126,26 @@ export default function Signup() {
         }
 
         try {
-            await axios.post('/api/auth/signup', {
-                email,
-                password,
-                userid: id,
-                name: id
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    userid: id,
+                    name: id,
+                }),
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert('회원가입 실패: ' + (data.message || '서버 오류'));
+                return;
+            }
             alert('회원가입 성공');
             navigate('/');
-        } catch (error) {
-            alert('회원가입 실패: ' + (error.response?.data?.message || '서버 오류'));
+        } catch (err) {
+            alert('회원가입 실패');
+            console.error(err);
         }
     };
 
@@ -184,5 +193,5 @@ export default function Signup() {
                 <LoginLink to="/">로그인</LoginLink>
             </Container>
         </>
-    )
+    );
 }

@@ -24,11 +24,9 @@ import in_chat from '../assets/in_chat.svg';
 import icon from '../assets/icon.svg';
 import in_icon from '../assets/in_icon.svg';
 import alarm from '../assets/alarm.svg';
-import setting from '../assets/setting.svg';
 import logo from '../assets/logo.svg';
 //components
 import backIcon from "../assets/detail_back_icon.svg";
-import message from "../assets/message.svg";
 import { GlobalStyle } from "../pages/homePage";
 
 import { Menu } from "../pages/homePage";
@@ -69,6 +67,7 @@ import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
+import { apiRequest, toApiDate } from "../utils/api";
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -329,15 +328,13 @@ export default function TeamDetailCreatePage(){
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [isLoadingFriends, setIsLoadingFriends] = useState(false);
 
-    // 텍스트 길이 기반 너비 계산
     const calcWidth = (text, fontSize = 22) => {
         const min = 50;
-        const max = 400;  // ← 최대 길이
+        const max = 400;
         const estimated = text.length * (fontSize * 0.6);
         return Math.min(Math.max(estimated, min), max);
     };
 
-    // title, logo는 고정 표시용
     const team = {
         id: null,
         title: "프로젝트 명",
@@ -353,7 +350,6 @@ export default function TeamDetailCreatePage(){
     const from = location.state?.from;
     const editMode = location.state?.editMode || false;
 
-    // 수정 가능한 필드만 state로
     const periodParts = team.period?.split(" - ") ?? ["", ""];
     const [startPeriod, setStartPeriod] = useState(periodParts[0]);
     const [endPeriod, setEndPeriod] = useState(periodParts[1]);
@@ -434,7 +430,6 @@ export default function TeamDetailCreatePage(){
             );
             alert('친구를 초대했어요!');
             setShowInviteModal(false);
-            // 팀 정보 새로고침
             const response = await axios.get(`/api/teams/${teamId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -462,11 +457,9 @@ export default function TeamDetailCreatePage(){
                 acc[teamKey].members.push(member);
             });
         });
-        // team_deadline에서 기한 초기화
         (team.team_deadline ?? []).forEach(d => {
             if (acc[d.join_team]) acc[d.join_team].period = d.deadline;
         });
-        // team_explan에서 내용 초기화
         (team.team_explan ?? []).forEach(t => {
             if (acc[t.join_team]) acc[t.join_team].explan.push(t.explan);
         });
@@ -477,7 +470,7 @@ export default function TeamDetailCreatePage(){
         const newTeamName = `새 팀 ${Object.keys(teamGroups).length + 1}`;
         setTeamGroups(prev => ({ 
             ...prev, 
-            [newTeamName]: { members: [], period: "", explan: [""], isNew: true }  /* ← isNew 추가 */
+            [newTeamName]: { members: [], period: "", explan: [""], isNew: true }
         }));
     };
     
@@ -517,21 +510,17 @@ export default function TeamDetailCreatePage(){
     };
 
     const SetData = async () => {
-        try{
-            if (!teamId) {
-                navigate("/project");
-                return;
-            }
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/teams/${teamId}`, {
+        if (!teamId) {
+            navigate("/project");
+            return;
+        }
+
+        try {
+            await apiRequest(`/api/teams/${teamId}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     name: title,
-                    deadline: endPeriod || startPeriod,
+                    deadline: toApiDate(endPeriod || startPeriod),
                     dpLeader: charge,
                     teamCode: code,
                     dpName: description,
@@ -539,19 +528,11 @@ export default function TeamDetailCreatePage(){
                     teamExplan,
                 }),
             });
-    
-            if(res.ok){
-                console.log("팀 수정 성공");
-                alert("수정 완료");
-                navigate("/project");
-            }else{
-                const errorData = await res.json().catch(() => ({}));
-                console.log("팀 수정 실패", errorData);
-                alert(errorData.error || "수정에 실패했습니다.");
-            }
-        }catch(err){
+            alert("수정 완료");
+            navigate("/project");
+        } catch (err) {
             console.error(err);
-            alert("수정 중 오류가 발생했습니다.");
+            alert(err.message || "수정 중 오류가 발생했습니다.");
         }
     };
 
@@ -574,7 +555,6 @@ export default function TeamDetailCreatePage(){
                         );
                     })}
                     <Line />
-                    {/* 🔔 알림 */}
                     <Item onClick={() => navigate("/notification")}>
                         <Background $active={isAlarmActive} />
                         <Icon src={alarm} />
@@ -612,7 +592,7 @@ export default function TeamDetailCreatePage(){
                                     value={charge}
                                     onChange={(e) => {
                                         setCharge(e.target.value);
-                                        setChargeWidth(calcWidth(e.target.value));  // ← 입력마다 너비 갱신
+                                        setChargeWidth(calcWidth(e.target.value));
                                     }}
                                     autoFocus
                                     $width={chargeWidth}
@@ -621,7 +601,7 @@ export default function TeamDetailCreatePage(){
                                 <DataText ref={chargeRef}>{charge}</DataText>
                             )}
                             <EditIcon src={edit_icon} onClick={() => {
-                                setChargeWidth(calcWidth(charge));  // ← 현재 텍스트 기준으로 초기 너비
+                                setChargeWidth(calcWidth(charge));
                                 setEditingCharge(prev => !prev);
                             }} />
                         </TextWapper>
@@ -635,9 +615,7 @@ export default function TeamDetailCreatePage(){
                                     $width={codeWidth}
                                 />
                             ) : (
-                                <DataText
-                                    ref={codeRef}
-                                >{code}</DataText>
+                                <DataText ref={codeRef}>{code}</DataText>
                             )}
                             <EditIcon src={edit_icon} onClick={() => {
                                 setCodeWidth(codeRef.current?.offsetWidth ?? 100);
@@ -757,7 +735,6 @@ export default function TeamDetailCreatePage(){
                     teamId={team.id}
                     onClose={() => setShowFeedbackModal(false)}
                     onSubmit={() => {
-                        // 피드백 제출 후 처리
                         setShowFeedbackModal(false);
                     }}
                 />

@@ -1,197 +1,175 @@
 import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 
 import plankLogo from "../assets/logo.svg";
 import backIcon from "../assets/back-button.svg";
 import { GlobalStyle } from "../pages/homePage";
+import { BackButton, Icon, Logo, SumbitButton, Title } from "./team_create";
+import { apiRequest } from "../utils/api";
 
-const Page = styled.div`
-  min-height: 100vh;
+const Wapper = styled.div`
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 42px 24px;
-  background: #fff;
+  align-items: center;
+  flex-direction: column;
 `;
 
-const Panel = styled.div`
-  width: min(960px, 82vw);
-  min-height: 504px;
-  border-radius: 18px;
+const Container = styled.div`
+  width: 90%;
+  min-height: 80%;
+  align-items: center;
+  border-radius: 30px;
   background: #fff;
   box-shadow: 0 0 30px 3px rgba(192, 218, 88, 0.4);
-  position: relative;
-  padding: 44px 72px;
 `;
 
-const BackButton = styled.button`
-  position: absolute;
-  top: 28px;
-  left: 28px;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
+const TopWapper = styled.div`
+  margin: 20px 0;
 `;
 
-const BackImg = styled.img`
-  width: 18px;
-  height: 18px;
-`;
-
-const Logo = styled.img`
-  display: block;
-  width: 220px;
-  height: auto;
-  margin: 0 auto 16px;
-`;
-
-const Title = styled.h1`
-  margin: 0;
-  color: #959794;
-  text-align: center;
-  font-size: 20px;
-  font-weight: 500;
-`;
-
-const RoleGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px;
-  max-width: 690px;
-  margin: 44px auto 0;
-
-  @media (max-width: 820px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const RoleCard = styled.button`
-  height: 138px;
-  padding: 24px 18px;
-  border-radius: 10px;
-  border: 1px solid ${({ $active }) => ($active ? "#c0da58" : "#d8d8d7")};
-  background: ${({ $active }) => ($active ? "#fff" : "#fbfbfb")};
-  box-shadow: ${({ $active }) => ($active ? "0 0 24px rgba(192, 218, 88, 0.45)" : "none")};
-  cursor: pointer;
-`;
-
-const RoleName = styled.div`
-  margin-bottom: 24px;
-  color: #111;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 700;
-`;
-
-const DetailInput = styled.input`
-  width: 100%;
-  height: 38px;
-  border: 1px solid #d8d8d7;
-  border-radius: 7px;
-  padding: 0 12px;
-  outline: none;
-  font-size: 12px;
-
-  &:focus {
-    border-color: #c0da58;
-  }
-`;
-
-const SubmitButton = styled.button`
+const MainWapper = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: min(338px, 80%);
-  height: 56px;
-  margin: 40px auto 0;
-  border: none;
-  border-radius: 8px;
-  background: #c0da58;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
+  align-items: center;
+  flex-direction: column;
 `;
 
-const Message = styled.div`
-  margin-top: 18px;
-  color: ${({ $error }) => ($error ? "#d9534f" : "#7e9640")};
+const SelectForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const RoleBox = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin: 40px 0;
+  width: 100%;
+`;
+
+const RoleCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
+  height: 160px;
+  gap: 10px;
+  padding: 20px 28px 51px;
+  border-radius: 20px;
+  border: 1px solid #c9c9c8;
+  background: #f8f8f8;
+  box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+
+  ${({ $active }) =>
+    $active &&
+    `
+      border: 1px solid #c0da58;
+      background: #fff;
+      box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.40);
+    `}
+
+  &:hover {
+    border: 1px solid #c0da58;
+    background: #fff;
+    box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.4);
+  }
+`;
+
+const RoleTitle = styled.span`
+  align-self: stretch;
+  color: #000;
   text-align: center;
-  font-size: 14px;
+  font-size: 22px;
   font-weight: 600;
 `;
+
+const RoleInput = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: #70716f;
+  font-size: 18px;
+  border: 1px solid #c9c9c8;
+  background: #fff;
+  outline: none;
+  margin-top: 20px;
+`;
+
+const roles = ["개발자", "디자이너", "기획자"];
 
 export default function TeamSelectPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const teamId = location.state?.teamId || localStorage.getItem("teamId");
-  const roles = useMemo(() => ["개발자", "디자이너", "기획자"], []);
-  const [selectedRole, setSelectedRole] = useState(roles[0]);
+  const teamId = location.state?.teamId || location.state?.team?.id;
+  const [selectedRole, setSelectedRole] = useState(null);
   const [details, setDetails] = useState(Object.fromEntries(roles.map((role) => [role, ""])));
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!teamId) {
-      setError("팀 정보를 찾지 못했습니다. 다시 참여해주세요.");
+  const sendSelectedRole = async (event) => {
+    event.preventDefault();
+
+    if (!selectedRole) {
+      alert("부서를 선택해 주세요.");
       return;
     }
 
-    setSaving(true);
-    setError("");
-    try {
-      const token = localStorage.getItem("token");
-      await axios.patch(
-        `/api/teams/${teamId}/members/me/department`,
-        { department: selectedRole, jobDetail: details[selectedRole] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    if (!teamId) {
       navigate("/project");
-    } catch (selectError) {
-      setError(selectError.response?.data?.error || "부서 선택 저장에 실패했습니다.");
-    } finally {
-      setSaving(false);
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/teams/${teamId}/members/me/department`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          department: selectedRole,
+          jobDetail: details[selectedRole],
+        }),
+      });
+      navigate("/project");
+    } catch (error) {
+      alert(error.message || "부서 선택 저장에 실패했습니다.");
+      console.error(error);
     }
   };
 
   return (
     <>
       <GlobalStyle />
-      <Page>
-        <Panel>
-          <BackButton type="button" onClick={() => navigate("/team-join")}>
-            <BackImg src={backIcon} alt="back" />
-          </BackButton>
-          <Logo src={plankLogo} alt="plank" />
-          <Title>부서 선택</Title>
-          <RoleGrid>
-            {roles.map((role) => (
-              <RoleCard
-                key={role}
-                type="button"
-                $active={selectedRole === role}
-                onClick={() => setSelectedRole(role)}
-              >
-                <RoleName>{role}</RoleName>
-                <DetailInput
-                  placeholder="상세 직무 입력"
-                  value={details[role]}
-                  onChange={(event) => setDetails((prev) => ({ ...prev, [role]: event.target.value }))}
-                  onClick={(event) => event.stopPropagation()}
-                />
-              </RoleCard>
-            ))}
-          </RoleGrid>
-          <SubmitButton type="button" onClick={handleSubmit} disabled={saving}>
-            {saving ? "저장 중..." : "선택 완료"}
-          </SubmitButton>
-          {error ? <Message $error>{error}</Message> : null}
-        </Panel>
-      </Page>
+      <Wapper>
+        <Container>
+          <TopWapper>
+            <BackButton onClick={() => navigate("/team-join")}>
+              <Icon src={backIcon} />
+            </BackButton>
+          </TopWapper>
+          <MainWapper>
+            <Logo src={plankLogo} />
+            <Title>부서 선택</Title>
+            <SelectForm onSubmit={sendSelectedRole}>
+              <RoleBox>
+                {roles.map((role) => (
+                  <RoleCard key={role} $active={selectedRole === role} onClick={() => setSelectedRole(role)}>
+                    <RoleTitle>{role}</RoleTitle>
+                    <RoleInput
+                      placeholder="상세 직무 입력"
+                      value={details[role]}
+                      onChange={(event) => setDetails((prev) => ({ ...prev, [role]: event.target.value }))}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  </RoleCard>
+                ))}
+              </RoleBox>
+              <SumbitButton type="submit">선택 완료</SumbitButton>
+            </SelectForm>
+          </MainWapper>
+        </Container>
+      </Wapper>
     </>
   );
 }
