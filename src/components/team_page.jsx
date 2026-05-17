@@ -3,10 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import searchIcon from "../assets/search_icon.png";
-import createIcon from "../assets/add_icon.svg";
 import menuIcon from "../assets/menu.svg";
-import modifyIcon from "../assets/modify_icon.svg";
-import hidingIcon from "../assets/hiding_icon.svg";
+import editIcon from "../assets/modify_icon.svg";
 import deleteIcon from "../assets/delete_icon.svg";
 import hideIcon from "../assets/hiding_down_icon.svg";
 
@@ -38,7 +36,6 @@ const HeaderBar = styled.header`
 `;
 
 const SearchBox = styled.div`
-  display: flex;
   width: min(826px, 100%);
   height: 52px;
   padding: 0 20px 0 22px;
@@ -48,6 +45,7 @@ const SearchBox = styled.div`
   border: 1px solid #c0da58;
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+  display: flex;
 `;
 
 const SearchInput = styled.input`
@@ -58,7 +56,7 @@ const SearchInput = styled.input`
   font-size: 16px;
 `;
 
-const SearchIcon = styled.img`
+const SearchIconImg = styled.img`
   width: 24px;
   height: 24px;
   cursor: pointer;
@@ -153,15 +151,14 @@ const ProgressText = styled.span`
 const ProgressBar = styled.div`
   width: 100%;
   height: 2px;
+  margin-top: 10px;
   background: #c9c9c8;
-  border-radius: 10px;
 `;
 
 const BarFill = styled.div`
   width: ${({ $progress }) => Math.min(Math.max(Number($progress) || 0, 0), 100)}%;
   height: 3px;
   background: #c0da58;
-  border-radius: 40px;
 `;
 
 const DetailText = styled.button`
@@ -432,7 +429,7 @@ export default function TeamPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
-              <SearchIcon src={searchIcon} alt="" />
+              <SearchIconImg src={searchIcon} alt="" />
             </SearchBox>
 
             <JoinButton type="button" onClick={() => navigate("/team-join")}>
@@ -454,13 +451,16 @@ export default function TeamPage() {
 
                 {openMenuId === team.id && (
                   <MenuBox ref={menuRef}>
-                    <MenuWapper type="button" onClick={() => navigate("/team-modify", { state: { team }, from: "project" })}>
-                      <MenuIcon src={modifyIcon} alt="" />
+                    <MenuWapper
+                      type="button"
+                      onClick={() => navigate("/team-modify", { state: { team }, from: "project" })}
+                    >
+                      <MenuIcon src={editIcon} alt="" />
                       <MenuText>수정</MenuText>
                     </MenuWapper>
                     <MenuLine />
                     <MenuWapper type="button" onClick={() => handleHide(team.id)}>
-                      <MenuIcon src={hidingIcon} alt="" />
+                      <MenuIcon src={hideIcon} alt="" />
                       <MenuText>숨김</MenuText>
                     </MenuWapper>
                     <MenuLine />
@@ -508,7 +508,7 @@ export default function TeamPage() {
           </HideWapper>
 
           <CreateButton type="button" onClick={() => navigate("/team-create")}>
-            <CreateIcon src={createIcon} alt="프로젝트 생성" />
+            <CreateIcon src={editIcon} alt="프로젝트 생성" />
           </CreateButton>
         </ContentBox>
       </PageLayout>

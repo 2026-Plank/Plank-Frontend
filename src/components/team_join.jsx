@@ -35,7 +35,6 @@ const TeamCodeInput = styled.input`
 `;
 
 export default function TeamJoin() {
-  const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
   const navigate = useNavigate();
 
@@ -76,11 +75,12 @@ export default function TeamJoin() {
         <Title>참가하기</Title>
         <Form onSubmit={sendTeamData}>
           <InputWrapper>
-            <TeamNameInput type="text" placeholder=" " value={teamName} onChange={(event) => setTeamName(event.target.value)} />
-            <Label>이름</Label>
-          </InputWrapper>
-          <InputWrapper>
-            <TeamCodeInput type="text" placeholder=" " value={teamCode} onChange={(event) => setTeamCode(event.target.value)} />
+            <TeamCodeInput
+              type="text"
+              placeholder=" "
+              value={teamCode}
+              onChange={(event) => setTeamCode(event.target.value)}
+            />
             <Label>팀 코드</Label>
           </InputWrapper>
           <SumbitButton type="submit">참가하기</SumbitButton>
