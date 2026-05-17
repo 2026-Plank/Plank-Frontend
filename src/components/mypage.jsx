@@ -558,7 +558,6 @@ export default function MyPage() {
                                     <FeedbackCard key={feedback.id}>
                                         <FeedbackHead>
                                             <FeedbackTitle>{feedback.fromUser?.name || feedback.fromUser?.userid || "알 수 없는 사용자"}</FeedbackTitle>
-                                            <FeedbackTitle>{feedback.rating}/5</FeedbackTitle>
                                         </FeedbackHead>
                                         <FeedbackMeta>{feedback.category === "team" ? "팀원 피드백" : "개인 피드백"}</FeedbackMeta>
                                         <FeedbackBody>{feedback.content}</FeedbackBody>
@@ -579,7 +578,6 @@ export default function MyPage() {
                                     <FeedbackCard key={feedback.id}>
                                         <FeedbackHead>
                                             <FeedbackTitle>{feedback.toUser?.name || feedback.toUser?.userid || "알 수 없는 사용자"}</FeedbackTitle>
-                                            <FeedbackTitle>{feedback.rating}/5</FeedbackTitle>
                                         </FeedbackHead>
                                         <FeedbackMeta>{feedback.category === "team" ? "팀원 피드백" : "개인 피드백"}</FeedbackMeta>
                                         <FeedbackBody>{feedback.content}</FeedbackBody>

@@ -293,6 +293,24 @@ const FeedbackForm = styled.form`
   width: 100%;
 `;
 
+const FeedbackTargetSelect = styled.select`
+  width: 180px;
+  height: 82px;
+  padding: 0 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #222;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+
+  &:focus {
+    border-color: #c0da58;
+    box-shadow: 0 0 18px rgba(192, 218, 88, 0.22);
+  }
+`;
+
 const FeedbackInput = styled.textarea`
   flex: 1;
   min-height: 82px;
@@ -446,6 +464,7 @@ export default function TeamDetailPage() {
   const [serverTeam, setServerTeam] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
   const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackTargetId, setFeedbackTargetId] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const team = {
@@ -462,6 +481,11 @@ export default function TeamDetailPage() {
   const groups = buildGroups(normalizedTeam);
   const isAlarmActive = location.pathname === "/notification";
   const canUseServer = Boolean(getAuthToken() && normalizedTeam.id);
+  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  const feedbackTargets = normalizedTeam.members.filter((member) => {
+    const memberPk = member.userPk ?? member.userId ?? member.id;
+    return String(memberPk) !== String(currentUser?.id) && String(member.id) !== String(currentUser?.userId);
+  });
 
   useEffect(() => {
     const teamId = location.state?.team?.id;
@@ -500,6 +524,10 @@ export default function TeamDetailPage() {
     event.preventDefault();
     const content = feedbackText.trim();
     if (!content) return;
+    if (!feedbackTargetId) {
+      alert("피드백을 받을 팀원을 선택해주세요.");
+      return;
+    }
 
     if (!canUseServer) {
       alert("로그인 후 서버에 저장된 프로젝트에서 피드백을 남길 수 있습니다.");
@@ -512,6 +540,7 @@ export default function TeamDetailPage() {
         method: "POST",
         body: JSON.stringify({
           teamId: normalizedTeam.id,
+          toUserId: feedbackTargetId,
           content,
         }),
       });
@@ -519,6 +548,7 @@ export default function TeamDetailPage() {
         setFeedbacks((prev) => [data.feedback, ...prev]);
       }
       setFeedbackText("");
+      setFeedbackTargetId("");
     } catch (error) {
       alert(error.message || "피드백 등록에 실패했습니다.");
     } finally {
@@ -678,12 +708,24 @@ export default function TeamDetailPage() {
 
               <FeedbackPanel>
                 <FeedbackForm onSubmit={submitFeedback}>
+                  <FeedbackTargetSelect
+                    value={feedbackTargetId}
+                    onChange={(event) => setFeedbackTargetId(event.target.value)}
+                    disabled={feedbackLoading}
+                  >
+                    <option value="">팀원 선택</option>
+                    {feedbackTargets.map((member) => (
+                      <option key={member.userPk ?? member.id} value={member.userPk ?? member.id}>
+                        {member.name || member.id}
+                      </option>
+                    ))}
+                  </FeedbackTargetSelect>
                   <FeedbackInput
                     value={feedbackText}
                     onChange={(event) => setFeedbackText(event.target.value)}
                     placeholder="프로젝트에 대한 피드백을 댓글처럼 남겨주세요."
                   />
-                  <FeedbackButton type="submit" disabled={feedbackLoading || !feedbackText.trim()}>
+                  <FeedbackButton type="submit" disabled={feedbackLoading || !feedbackText.trim() || !feedbackTargetId}>
                     등록
                   </FeedbackButton>
                 </FeedbackForm>

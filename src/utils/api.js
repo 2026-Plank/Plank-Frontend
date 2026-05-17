@@ -83,6 +83,7 @@ export const mapApiTeam = (team) => {
   const members = Array.isArray(team?.members)
     ? team.members.map((member) => ({
         ...member,
+        userPk: member.userPk,
         name: member.name || member.id || "이름 없음",
         join_team: member.department ? [member.department] : [],
       }))
