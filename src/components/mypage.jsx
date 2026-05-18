@@ -419,6 +419,24 @@ export default function MyPage() {
         }
     };
 
+    const handleStartChat = (friend) => {
+        const user = friend.user;
+        navigate("/chat", {
+            state: {
+                selectedChat: {
+                    id: Number(user.id),
+                    name: user.name || user.userid || user.email || "이름 없음",
+                    charge: user.email || "사용자",
+                    lastMsg: "아직 대화가 없습니다.",
+                    time: "대화 없음",
+                    lastTimestamp: null,
+                    state: "ONLINE",
+                    profile: user.profile
+                }
+            }
+        });
+    };
+
     return (
         <>
             <GlobalStyle />
@@ -538,6 +556,7 @@ export default function MyPage() {
                                         <UserMeta>{friend.user.userid} · {friend.user.email}</UserMeta>
                                     </UserBlock>
                                     <ActionRow>
+                                        <Button type="button" onClick={() => handleStartChat(friend)}>메시지</Button>
                                         <Button $secondary type="button" onClick={() => handleDelete(friend.relationId)}>친구 삭제</Button>
                                     </ActionRow>
                                 </ListItem>
