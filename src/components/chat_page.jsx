@@ -99,6 +99,41 @@ const AddChatEmpty = styled.div`
   text-align: center;
 `;
 
+const GroupCreateBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ececeb;
+`;
+
+const GroupNameInput = styled.input`
+  height: 36px;
+  border: 1px solid #e1e1e0;
+  border-radius: 8px;
+  padding: 0 10px;
+  outline: none;
+`;
+
+const GroupMemberRow = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  font-size: 13px;
+`;
+
+const GroupCreateButton = styled.button`
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #c0da58;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+`;
+
 export const SearchBox = styled.input`
   width: 330px;
   border: none;
@@ -273,6 +308,20 @@ export const ChatItemName = styled.span`
   font-weight: 600;
 `;
 
+const UnreadBadge = styled.span`
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f04419;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
 export const ChatItemBottom = styled.div`
   display: flex;
   align-items: center;
@@ -335,6 +384,26 @@ const BubbleText = styled.span`
 const TimeText = styled.span`
   color: var(--Gray-7, #70716f);
   font-size: 10px;
+`;
+
+const SenderName = styled.span`
+  color: #70716f;
+  font-size: 12px;
+  margin: 0 0 4px 10px;
+`;
+
+const MessageStack = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: ${({ $isMine }) => ($isMine ? "flex-end" : "flex-start")};
+`;
+
+const DeleteMessageButton = styled.button`
+  border: 0;
+  background: transparent;
+  color: #70716f;
+  font-size: 11px;
+  cursor: pointer;
 `;
 
 const UserMessageBox = styled.div`
@@ -468,12 +537,17 @@ const removeHiddenChatId = (userId, chatId) => {
 
 const getSavedSelectedChatId = (userId) => {
   const value = localStorage.getItem(selectedChatStorageKey(userId));
-  return value ? Number(value) : null;
+  if (!value) return null;
+  if (value.includes(":")) {
+    const [type, id] = value.split(":");
+    return { type, id: Number(id) };
+  }
+  return { type: "direct", id: Number(value) };
 };
 
-const saveSelectedChatId = (userId, chatId) => {
-  if (!chatId) return;
-  localStorage.setItem(selectedChatStorageKey(userId), String(chatId));
+const saveSelectedChatId = (userId, chat) => {
+  if (!chat?.id) return;
+  localStorage.setItem(selectedChatStorageKey(userId), `${chat.type || "direct"}:${chat.id}`);
 };
 
 const getSavedPresenceState = (userId) => {
@@ -503,6 +577,7 @@ const syncPresenceState = (userId, state, serverValue) => {
 };
 
 const normalizeConversation = (item) => ({
+  type: "direct",
   id: Number(item.userId || item.id),
   name: item.name || item.userid || item.email || "이름 없음",
   charge: item.email || "사용자",
@@ -511,11 +586,26 @@ const normalizeConversation = (item) => ({
   lastTimestamp: item.lastTimestamp || null,
   state: item.presenceStatus || "ONLINE",
   profile: item.profile,
+  unreadCount: Number(item.unreadCount || 0),
+});
+
+const normalizeGroup = (item) => ({
+  type: "group",
+  id: Number(item.groupId || item.id),
+  name: item.name || "그룹 채팅",
+  charge: "그룹",
+  lastMsg: item.lastMessage || "아직 대화가 없습니다.",
+  time: formatRelative(item.lastTimestamp),
+  lastTimestamp: item.lastTimestamp || null,
+  state: "ONLINE",
+  profile: null,
+  unreadCount: Number(item.unreadCount || 0),
 });
 
 const normalizeFriend = (friend) => {
   const user = friend.user || friend;
   return {
+    type: "direct",
     id: Number(user.id),
     name: user.name || user.userid || user.email || "이름 없음",
     charge: user.email || "사용자",
@@ -524,6 +614,7 @@ const normalizeFriend = (friend) => {
     lastTimestamp: null,
     state: user.presenceStatus || "ONLINE",
     profile: user.profile,
+    unreadCount: 0,
   };
 };
 
@@ -547,6 +638,8 @@ export default function ChatPage() {
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [hiddenVersion, setHiddenVersion] = useState(0);
   const [hiddenChatIds, setHiddenChatIds] = useState([]);
+  const [groupName, setGroupName] = useState("");
+  const [groupMemberIds, setGroupMemberIds] = useState([]);
 
   const isAlarmActive = location.pathname === "/notification";
 
@@ -580,6 +673,7 @@ export default function ChatPage() {
     const hiddenIds = new Set(hiddenIdList);
     setHiddenChatIds(hiddenIdList);
     const conversations = (conversationsData.conversations || []).map(normalizeConversation);
+    const groups = (conversationsData.groups || []).map(normalizeGroup);
     const conversationById = new Map(conversations.map((item) => [item.id, item]));
     const visibleConversations = conversations.filter((item) => item.id && !hiddenIds.has(item.id));
     const visibleConversationIds = new Set(visibleConversations.map((item) => item.id));
@@ -594,12 +688,12 @@ export default function ChatPage() {
     const friends = normalizedFriends
       .filter((item) => !hiddenIds.has(item.id) && !visibleConversationIds.has(item.id));
 
-    const nextList = [...visibleConversations, ...friends];
+    const nextList = [...groups, ...visibleConversations, ...friends];
     setChatList(nextList);
     setSelectedChat((current) => {
-      if (current && nextList.some((item) => item.id === current.id)) return current;
-      const savedId = getSavedSelectedChatId(profileData?.id);
-      const savedChat = nextList.find((item) => item.id === savedId);
+      if (current && nextList.some((item) => item.id === current.id && item.type === current.type)) return current;
+      const saved = getSavedSelectedChatId(profileData?.id);
+      const savedChat = nextList.find((item) => item.id === saved?.id && item.type === saved?.type);
       if (savedChat) return savedChat;
       if (current) return current;
       return null;
@@ -629,7 +723,9 @@ export default function ChatPage() {
 
     let mounted = true;
     const loadMessages = async () => {
-      const data = await apiRequest(`/api/chats/${selectedChat.id}`);
+      const data = selectedChat.type === "group"
+        ? await apiRequest(`/api/chats/groups/${selectedChat.id}/messages`)
+        : await apiRequest(`/api/chats/${selectedChat.id}`);
       if (mounted) setMessages(data || []);
     };
 
@@ -653,7 +749,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (profile?.id && selectedChat?.id) {
-      saveSelectedChatId(profile.id, selectedChat.id);
+      saveSelectedChatId(profile.id, selectedChat);
     }
   }, [profile?.id, selectedChat?.id]);
 
@@ -685,7 +781,7 @@ export default function ChatPage() {
 
   const handleSelectChat = (item) => {
     setSelectedChat(item);
-    saveSelectedChatId(profile?.id, item.id);
+    saveSelectedChatId(profile?.id, item);
   };
 
   const handleSendChat = async () => {
@@ -694,11 +790,16 @@ export default function ChatPage() {
 
     setSendChat("");
     try {
-      removeHiddenChatId(profile?.id, selectedChat.id);
-      const data = await apiRequest("/api/chats", {
-        method: "POST",
-        body: JSON.stringify({ receiverId: selectedChat.id, message }),
-      });
+      if (selectedChat.type !== "group") removeHiddenChatId(profile?.id, selectedChat.id);
+      const data = selectedChat.type === "group"
+        ? await apiRequest(`/api/chats/groups/${selectedChat.id}/messages`, {
+            method: "POST",
+            body: JSON.stringify({ message }),
+          })
+        : await apiRequest("/api/chats", {
+            method: "POST",
+            body: JSON.stringify({ receiverId: selectedChat.id, message }),
+          });
       setMessages((prev) => [...prev, data.chat]);
       await loadChatList();
     } catch (err) {
@@ -712,6 +813,39 @@ export default function ChatPage() {
     setHiddenVersion((version) => version + 1);
     setShowAddPanel(false);
     handleSelectChat(item);
+    await loadChatList();
+  };
+
+  const handleToggleGroupMember = (id) => {
+    setGroupMemberIds((prev) => (
+      prev.includes(id) ? prev.filter((memberId) => memberId !== id) : [...prev, id]
+    ));
+  };
+
+  const handleCreateGroup = async () => {
+    const name = groupName.trim();
+    if (!name || groupMemberIds.length === 0) return;
+    const data = await apiRequest("/api/chats/groups", {
+      method: "POST",
+      body: JSON.stringify({ name, memberIds: groupMemberIds }),
+    });
+    const group = normalizeGroup(data.group);
+    setGroupName("");
+    setGroupMemberIds([]);
+    setShowAddPanel(false);
+    setSelectedChat(group);
+    await loadChatList();
+  };
+
+  const handleDeleteMessage = async (msg) => {
+    if (!msg?.id || Number(msg.senderId) !== currentUserId) return;
+    const deletedMessage = { ...msg, message: "삭제된 메시지입니다.", deletedAt: new Date().toISOString() };
+    if (selectedChat.type === "group") {
+      await apiRequest(`/api/chats/groups/messages/${msg.id}`, { method: "DELETE" });
+    } else {
+      await apiRequest(`/api/chats/messages/${msg.id}`, { method: "DELETE" });
+    }
+    setMessages((prev) => prev.map((item) => (item.id === msg.id ? deletedMessage : item)));
     await loadChatList();
   };
 
@@ -764,6 +898,24 @@ export default function ChatPage() {
                 {showAddPanel && (
                   <AddChatPanel>
                     <AddChatTitle>채팅 추가</AddChatTitle>
+                    <GroupCreateBox>
+                      <GroupNameInput
+                        value={groupName}
+                        onChange={(event) => setGroupName(event.target.value)}
+                        placeholder="그룹 이름"
+                      />
+                      {allFriends.map((item) => (
+                        <GroupMemberRow key={item.id}>
+                          <input
+                            type="checkbox"
+                            checked={groupMemberIds.includes(item.id)}
+                            onChange={() => handleToggleGroupMember(item.id)}
+                          />
+                          {item.name}
+                        </GroupMemberRow>
+                      ))}
+                      <GroupCreateButton type="button" onClick={handleCreateGroup}>그룹 만들기</GroupCreateButton>
+                    </GroupCreateBox>
                     {addableFriends.length ? (
                       addableFriends.map((item) => (
                         <ChatItem key={item.id} onClick={() => handleAddChat(item)}>
@@ -820,14 +972,15 @@ export default function ChatPage() {
 
               <UserBox>
                 {visibleLeftItems.map((item) => (
-                  <ChatItem key={item.id} $active={selectedChat?.id === item.id} onClick={() => showInlineAddFriends ? handleAddChat(item) : handleSelectChat(item)}>
+                  <ChatItem key={`${item.type}-${item.id}`} $active={selectedChat?.id === item.id && selectedChat?.type === item.type} onClick={() => showInlineAddFriends ? handleAddChat(item) : handleSelectChat(item)}>
                     <ChatItemIconWrapper>
                       <UserIcon $size={60} src={getProfileSrc(item.profile)} />
                     </ChatItemIconWrapper>
                     <ChatItemInfo>
                       <ChatItemTop>
-                        <StateDot $color={states.find((state) => state.value === item.state)?.color} />
+                        {item.type === "group" ? <StateDot $color="C0DA58" /> : <StateDot $color={states.find((state) => state.value === item.state)?.color} />}
                         <ChatItemName>{item.name}</ChatItemName>
+                        {item.unreadCount > 0 && <UnreadBadge>{item.unreadCount}</UnreadBadge>}
                       </ChatItemTop>
                       <ChatItemBottom>
                         <ChatItemMsg>{item.lastMsg} · {item.time}</ChatItemMsg>
@@ -884,13 +1037,18 @@ export default function ChatPage() {
                 {!loading && selectedChat && messages.length === 0 && <EmptyText>아직 메시지가 없습니다.</EmptyText>}
                 {selectedChat && messages.map((msg) => {
                   const isMine = Number(msg.senderId) === currentUserId;
+                  const isDeleted = Boolean(msg.deletedAt);
                   return (
                     <MessageRow key={msg.id || `${msg.senderId}-${msg.timestamp}-${msg.message}`} $isMine={isMine}>
                       {!isMine && <UserIcon $size={60} src={getProfileSrc(selectedChat.profile)} />}
                       {isMine && <TimeText>{formatTime(msg.timestamp)}</TimeText>}
-                      <BubbleBox $isMine={isMine}>
-                        <BubbleText>{msg.message}</BubbleText>
-                      </BubbleBox>
+                      <MessageStack $isMine={isMine}>
+                        {!isMine && selectedChat.type === "group" && <SenderName>{msg.senderName}</SenderName>}
+                        <BubbleBox $isMine={isMine}>
+                          <BubbleText>{msg.message}</BubbleText>
+                        </BubbleBox>
+                        {isMine && !isDeleted && <DeleteMessageButton type="button" onClick={() => handleDeleteMessage(msg)}>삭제</DeleteMessageButton>}
+                      </MessageStack>
                       {!isMine && <TimeText>{formatTime(msg.timestamp)}</TimeText>}
                       {isMine && <UserIcon $size={60} src={getProfileSrc(profile?.profile)} />}
                     </MessageRow>
