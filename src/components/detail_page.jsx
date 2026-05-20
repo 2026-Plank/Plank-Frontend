@@ -92,6 +92,25 @@ const DataText = styled.span`
   line-height: 1.4;
 `;
 
+const InlineActionButton = styled.button`
+  height: 36px;
+  margin-left: 12px;
+  padding: 0 14px;
+  border: 1px solid #c0da58;
+  border-radius: 8px;
+  background: #fff;
+  color: #708626;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    border-color: #d7d7d6;
+    color: #959794;
+    cursor: not-allowed;
+  }
+`;
+
 const UserWapper = styled.div`
   display: flex;
   align-items: center;
@@ -376,6 +395,66 @@ const FeedbackContent = styled.p`
   white-space: pre-wrap;
 `;
 
+const InvitePanel = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding-left: 24px;
+`;
+
+const InviteList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+`;
+
+const InviteItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #eeeeec;
+  border-radius: 10px;
+  background: #fff;
+`;
+
+const InviteUser = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+`;
+
+const InviteText = styled.div`
+  min-width: 0;
+`;
+
+const InviteName = styled.div`
+  color: #222;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const InviteMeta = styled.div`
+  margin-top: 3px;
+  color: #8a8a89;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const InviteMessage = styled.div`
+  color: ${({ $error }) => ($error ? "#f04419" : "#708626")};
+  font-size: 14px;
+  font-weight: 700;
+`;
+
 const fallbackTeam = {
   id: 1,
   title: "올리브영 리디자인 프로젝트",
@@ -466,6 +545,10 @@ export default function TeamDetailPage() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackTargetId, setFeedbackTargetId] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [inviteableFriends, setInviteableFriends] = useState([]);
+  const [inviteLoadingId, setInviteLoadingId] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
+  const [inviteError, setInviteError] = useState("");
 
   const team = {
     ...fallbackTeam,
@@ -482,6 +565,11 @@ export default function TeamDetailPage() {
   const isAlarmActive = location.pathname === "/notification";
   const canUseServer = Boolean(getAuthToken() && normalizedTeam.id);
   const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  const currentMember = normalizedTeam.members.find((member) => {
+    const memberPk = member.userPk ?? member.userId;
+    return String(memberPk) === String(currentUser?.id) || String(member.id) === String(currentUser?.userId);
+  });
+  const canInviteFriends = canUseServer && currentMember?.role === "Admin";
   const feedbackTargets = normalizedTeam.members.filter((member) => {
     const memberPk = member.userPk ?? member.userId ?? member.id;
     return String(memberPk) !== String(currentUser?.id) && String(member.id) !== String(currentUser?.userId);
@@ -520,6 +608,24 @@ export default function TeamDetailPage() {
     loadFeedbacks();
   }, [canUseServer, normalizedTeam.id]);
 
+  useEffect(() => {
+    if (!canInviteFriends) {
+      setInviteableFriends([]);
+      return;
+    }
+
+    const loadInviteableFriends = async () => {
+      try {
+        const data = await apiRequest(`/api/teams/${normalizedTeam.id}/inviteable-friends`);
+        setInviteableFriends(Array.isArray(data?.friends) ? data.friends : []);
+      } catch (error) {
+        setInviteError(error.message || "초대 가능한 친구를 불러오지 못했습니다.");
+      }
+    };
+
+    loadInviteableFriends();
+  }, [canInviteFriends, normalizedTeam.id]);
+
   const submitFeedback = async (event) => {
     event.preventDefault();
     const content = feedbackText.trim();
@@ -553,6 +659,33 @@ export default function TeamDetailPage() {
       alert(error.message || "피드백 등록에 실패했습니다.");
     } finally {
       setFeedbackLoading(false);
+    }
+  };
+
+  const inviteFriend = async (friendId) => {
+    if (!canInviteFriends || !friendId) return;
+
+    setInviteLoadingId(String(friendId));
+    setInviteMessage("");
+    setInviteError("");
+    try {
+      await apiRequest(`/api/teams/${normalizedTeam.id}/invite`, {
+        method: "POST",
+        body: JSON.stringify({ friendId }),
+      });
+      const [teamData, friendsData] = await Promise.all([
+        apiRequest(`/api/teams/${normalizedTeam.id}`),
+        apiRequest(`/api/teams/${normalizedTeam.id}/inviteable-friends`),
+      ]);
+      if (teamData?.team) {
+        setServerTeam(mapApiTeam(teamData.team));
+      }
+      setInviteableFriends(Array.isArray(friendsData?.friends) ? friendsData.friends : []);
+      setInviteMessage("친구를 프로젝트에 초대했습니다.");
+    } catch (error) {
+      setInviteError(error.message || "친구 초대에 실패했습니다.");
+    } finally {
+      setInviteLoadingId("");
     }
   };
 
@@ -623,6 +756,14 @@ export default function TeamDetailPage() {
                   <EmptyText>-</EmptyText>
                 )}
               </UserWapper>
+              {canInviteFriends && (
+                <InlineActionButton
+                  type="button"
+                  onClick={() => navigate("/team-modify", { state: { team: normalizedTeam, from: "detail" } })}
+                >
+                  친구 초대
+                </InlineActionButton>
+              )}
             </TextWapper>
           </Wapper>
 
@@ -699,6 +840,44 @@ export default function TeamDetailPage() {
                 )}
               </TeamBox>
             </BottomWapper>
+
+            {canInviteFriends && (
+              <BottomWapper>
+                <TextWapper>
+                  <VerticalLine />
+                  <DescriptionText>친구 초대</DescriptionText>
+                </TextWapper>
+
+                <InvitePanel>
+                  {inviteError ? <InviteMessage $error>{inviteError}</InviteMessage> : null}
+                  {!inviteError && inviteMessage ? <InviteMessage>{inviteMessage}</InviteMessage> : null}
+                  <InviteList>
+                    {inviteableFriends.length > 0 ? (
+                      inviteableFriends.map((friend) => (
+                        <InviteItem key={friend.id}>
+                          <InviteUser>
+                            <UserIcon src={userIcon} alt="" />
+                            <InviteText>
+                              <InviteName>{friend.name || friend.userid}</InviteName>
+                              <InviteMeta>{friend.email || friend.userid}</InviteMeta>
+                            </InviteText>
+                          </InviteUser>
+                          <InlineActionButton
+                            type="button"
+                            disabled={inviteLoadingId === String(friend.id)}
+                            onClick={() => inviteFriend(friend.id)}
+                          >
+                            {inviteLoadingId === String(friend.id) ? "초대 중" : "초대"}
+                          </InlineActionButton>
+                        </InviteItem>
+                      ))
+                    ) : (
+                      <EmptyText>초대할 수 있는 친구가 없습니다.</EmptyText>
+                    )}
+                  </InviteList>
+                </InvitePanel>
+              </BottomWapper>
+            )}
 
             <BottomWapper>
               <TextWapper>

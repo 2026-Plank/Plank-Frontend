@@ -226,11 +226,15 @@ export default function TeamCreate() {
             });
 
             const team = mapApiTeam(data.team);
+            if (team.id) {
+                localStorage.setItem("teamId", String(team.id));
+            }
             navigate("/team-select", {
                 state: {
                     team,
                     teamId: team.id,
                     from: "create",
+                    nextPath: "/team-modify",
                 },
             });
         } catch (err) {
