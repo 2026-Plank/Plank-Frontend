@@ -429,7 +429,7 @@ export default function SchedulePage() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    const teamId = localStorage.getItem("teamId") || "";
+    const [teamId, setTeamId] = useState(() => localStorage.getItem("teamId") || "");
 
     const menus = [
         { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
@@ -439,11 +439,21 @@ export default function SchedulePage() {
         { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
     ];
 
-    const loadSchedules = async () => {
+    const clearStoredTeamId = () => {
+        localStorage.removeItem("teamId");
+        setTeamId("");
+    };
+
+    const isMissingTeamError = (requestError) => {
+        const errorText = requestError.response?.data?.error || requestError.message || "";
+        return /ORA-02291|FK_TASK_TEAM|teamId/i.test(errorText);
+    };
+
+    const loadSchedules = async (targetTeamId = teamId) => {
         setLoading(true);
         setError("");
         try {
-            const url = teamId ? `/api/schedules/${teamId}` : "/api/schedules";
+            const url = targetTeamId ? `/api/schedules/${targetTeamId}` : "/api/schedules";
             const response = await axios.get(url);
             setSchedules(response.data.schedules || []);
         } catch (loadError) {
@@ -455,7 +465,7 @@ export default function SchedulePage() {
 
     useEffect(() => {
         loadSchedules();
-    }, []);
+    }, [teamId]);
 
     const scheduleCounts = useMemo(() => {
         const counts = { "모든 일정": schedules.length };
@@ -550,10 +560,24 @@ export default function SchedulePage() {
                 await axios.put(`/api/schedules/${editingId}`, payload);
                 setMessage("일정을 수정했어요.");
             } else {
-                await axios.post("/api/schedules", payload);
+                try {
+                    const response = await axios.post("/api/schedules", payload);
+                    if (teamId && !response.data?.schedule?.teamId) {
+                        clearStoredTeamId();
+                    }
+                } catch (postError) {
+                    if (!teamId || !isMissingTeamError(postError)) {
+                        throw postError;
+                    }
+
+                    clearStoredTeamId();
+                    const retryPayload = { ...payload };
+                    delete retryPayload.teamId;
+                    await axios.post("/api/schedules", retryPayload);
+                }
                 setMessage("일정을 추가했어요.");
             }
-            await loadSchedules();
+            await loadSchedules(localStorage.getItem("teamId") || "");
             setSelectedDate(form.targetDate);
             resetForm();
         } catch (submitError) {

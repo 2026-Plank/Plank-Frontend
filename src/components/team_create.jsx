@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import Backbtn from "../assets/back-button.svg";
 import logo from "../assets/logo.svg";
@@ -36,10 +36,57 @@ export const TeamNameInput = styled.input`
     outline: none;
 `;
 
-const DateInput = styled.input`
+const DateField = styled.div`
     display: flex;
     width: 538px;
     height: 90px;
+    padding: 32px 24px;
+    align-items: center;
+    position: relative;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
+    cursor: pointer;
+`;
+
+const DateValue = styled.span`
+    color: #111;
+    font-size: 14px;
+    line-height: 1;
+`;
+
+const DateCaption = styled.span`
+    position: absolute;
+    left: 16px;
+    top: 18px;
+    color: #70716f;
+    font-size: 14px;
+    pointer-events: none;
+`;
+
+const DateInput = styled.input`
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+
+    &::-webkit-datetime-edit {
+        display: none;
+    }
+
+    &::-webkit-calendar-picker-indicator {
+        opacity: 0;
+        cursor: pointer;
+    }
+`;
+
+const DescriptionInput = styled.textarea`
+    display: flex;
+    width: 538px;
+    min-height: 120px;
     padding: 32px 24px;
     align-items: center;
     border-radius: 12px;
@@ -47,6 +94,8 @@ const DateInput = styled.input`
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
     border: none;
     outline: none;
+    resize: vertical;
+    font: inherit;
 `;
 
 export const InputWrapper = styled.div`
@@ -136,9 +185,21 @@ const departments = ["프로젝트 기획", "UI 디자인", "개발", "품질 �
 
 export default function TeamCreate() {
     const navigate = useNavigate();
+    const dateInputRef = useRef(null);
     const [teamName, setTeamName] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [projectDescription, setProjectDescription] = useState("");
     const [department, setDepartment] = useState("");
+
+    const openDatePicker = () => {
+        if (dateInputRef.current?.showPicker) {
+            dateInputRef.current.showPicker();
+            return;
+        }
+
+        dateInputRef.current?.focus();
+        dateInputRef.current?.click();
+    };
 
     const sendTeamData = async (e) => {
         e.preventDefault();
@@ -159,16 +220,21 @@ export default function TeamCreate() {
                 body: JSON.stringify({
                     name: teamName.trim(),
                     deadline: toApiDate(endDate),
+                    description: projectDescription.trim(),
                     department: department || "기획자",
                 }),
             });
 
             const team = mapApiTeam(data.team);
+            if (team.id) {
+                localStorage.setItem("teamId", String(team.id));
+            }
             navigate("/team-select", {
                 state: {
                     team,
                     teamId: team.id,
                     from: "create",
+                    nextPath: "/team-modify",
                 },
             });
         } catch (err) {
@@ -197,10 +263,22 @@ export default function TeamCreate() {
                     </InputWrapper>
                     <InputWrapper>
                         <Label>마감일</Label>
-                        <DateInput
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                        <DateField onClick={openDatePicker}>
+                            <DateCaption>마감일</DateCaption>
+                            <DateValue>{endDate}</DateValue>
+                            <DateInput
+                                ref={dateInputRef}
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                        </DateField>
+                    </InputWrapper>
+                    <InputWrapper>
+                        <Label>프로젝트 설명</Label>
+                        <DescriptionInput
+                            value={projectDescription}
+                            onChange={(e) => setProjectDescription(e.target.value)}
                         />
                     </InputWrapper>
                     <div>
