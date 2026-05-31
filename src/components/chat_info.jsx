@@ -1,4 +1,4 @@
-//packages
+﻿//packages
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
@@ -69,13 +69,17 @@ import { ChatItemBottom } from "./chat_page";
 import { ChatItemMsg } from "./chat_page";
 import { UserName } from "./chat_page";
 import { states } from "./chat_page";
+import { apiRequest } from "../utils/api";
 //css
 const UserWapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
   padding: 0;
+`;
+const DetailUserCharge = styled(UserCharge)`
+  margin-left: 0;
 `;
 const BackIcon = styled.img`
   width: 48px;
@@ -132,11 +136,73 @@ const OutButton = styled.button`
   cursor: pointer;
 `;
 
+
+const getProfileSrc = (profile) => profile || user_icon;
+
+const formatRelative = (value) => {
+  if (!value) return "\uB300\uD654 \uC5C6\uC74C";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return "\uBC29\uAE08 \uC804";
+  if (minutes < 60) return minutes + "\uBD84 \uC804";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + "\uC2DC\uAC04 \uC804";
+  return Math.floor(hours / 24) + "\uC77C \uC804";
+};
+
+const normalizeGroup = (item) => ({
+  type: "group",
+  id: Number(item.groupId || item.id),
+  name: item.name || "\uADF8\uB8F9 \uCC44\uD305",
+  charge: "\uADF8\uB8F9",
+  lastMsg: item.lastMessage || "\uC544\uC9C1 \uB300\uD654\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+  time: formatRelative(item.lastTimestamp),
+  lastTimestamp: item.lastTimestamp || null,
+  state: "ONLINE",
+  profile: item.profile || null,
+  unreadCount: Number(item.unreadCount || 0),
+});
+
+const normalizeDirect = (item) => ({
+  type: "direct",
+  id: Number(item.userId || item.id),
+  name: item.name || item.userid || item.email || "\uC774\uB984 \uC5C6\uC74C",
+  charge: item.job || "\uC9C1\uBB34 \uBBF8\uC785\uB825",
+  lastMsg: item.lastMessage || "\uC544\uC9C1 \uB300\uD654\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+  time: formatRelative(item.lastTimestamp),
+  lastTimestamp: item.lastTimestamp || null,
+  state: item.presenceStatus || "ONLINE",
+  profile: item.profile,
+  unreadCount: Number(item.unreadCount || 0),
+});
+
+const normalizeFriend = (friend) => {
+  const user = friend.user || friend;
+  return {
+    type: "direct",
+    id: Number(user.id),
+    name: user.name || user.userid || user.email || "\uC774\uB984 \uC5C6\uC74C",
+    charge: user.job || "\uC9C1\uBB34 \uBBF8\uC785\uB825",
+    lastMsg: "\uC544\uC9C1 \uB300\uD654\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+    time: "\uB300\uD654 \uC5C6\uC74C",
+    lastTimestamp: null,
+    state: user.presenceStatus || "ONLINE",
+    profile: user.profile,
+    unreadCount: 0,
+  };
+};
+
+const getDisplayTime = (item) => {
+  if (item?.lastTimestamp) return formatRelative(item.lastTimestamp);
+  const time = String(item?.time || "");
+  if (!time || time.includes("?") || time.includes("�")) return "\uB300\uD654 \uC5C6\uC74C";
+  return time;
+};
+
 export default function ChatInfo() {
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedChat = location.state?.selectedChat || chatList[0];
-  const chatList = location.state?.chatList || [];
 
   const menus = [
     { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
@@ -151,11 +217,12 @@ export default function ChatInfo() {
     { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" },
   ];
 
-  const isAlarmActive = location.pathname === "/alarm";
-  const isSettingActive = location.pathname === "/setting";
-
+  const isAlarmActive = location.pathname === "/notification";
   const [openMenu, setOpenMenu] = useState(false);
   const [currentState, setCurrentState] = useState(states[0]);
+  const [profile, setProfile] = useState(null);
+  const [chatList, setChatList] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(location.state?.selectedChat || null);
   const menuRef = useRef();
 
   useEffect(() => {
@@ -167,15 +234,62 @@ export default function ChatInfo() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const loadData = async () => {
+    const [profileData, friendsData, conversationData] = await Promise.all([
+      apiRequest("/api/users/profile"),
+      apiRequest("/api/users/friends"),
+      apiRequest("/api/chats/conversations"),
+    ]);
+    const groups = (conversationData.groups || []).map(normalizeGroup);
+    const conversations = (conversationData.conversations || []).map(normalizeDirect);
+    const conversationById = new Map(conversations.map((item) => [item.id, item]));
+    const friends = (friendsData.friends || [])
+      .map(normalizeFriend)
+      .filter((item) => item.id)
+      .map((item) => ({
+        ...item,
+        ...(conversationById.get(item.id) || {}),
+      }));
+    const friendIds = new Set(friends.map((item) => item.id));
+    const extraConversations = conversations.filter((item) => !friendIds.has(item.id));
+    const nextList = location.state?.chatList?.length
+      ? location.state.chatList
+      : [...groups, ...friends, ...extraConversations];
+
+    setProfile(profileData);
+    setCurrentState(states.find((state) => state.value === profileData?.presenceStatus) || states[0]);
+    setChatList(nextList);
+    setSelectedChat((current) => {
+      const target = current || location.state?.selectedChat;
+      if (!target) return null;
+      return nextList.find((item) => item.id === Number(target.id) && (!target.type || item.type === target.type)) || null;
+    });
+  };
+
+  useEffect(() => {
+    loadData().catch(() => {
+      setProfile(null);
+      setChatList([]);
+      setSelectedChat(null);
+    });
+  }, []);
+
   const handleStateChange = (state) => {
     setCurrentState(state);
+    apiRequest("/api/users/presence", {
+      method: "PUT",
+      body: JSON.stringify({ presenceStatus: state.value }),
+    }).catch(() => {});
     setOpenMenu(false);
   };
 
   const handleOut = () => {
-    const updatedList = chatList.filter((item) => item.id !== selectedChat.id);
-    navigate("/chat", { state: { chatList: updatedList } });
+    navigate("/chat", { state: { selectedChat: null } });
   };
+
+  const myName = profile?.name || profile?.userid || "\uB0B4 \uD504\uB85C\uD544";
+  const myCharge = profile?.job || "\uC9C1\uBB34 \uBBF8\uC785\uB825";
 
   return (
     <>
@@ -201,8 +315,8 @@ export default function ChatInfo() {
 
             <Line />
 
-            {/* 🔔 알림 */}
-            <Item onClick={() => navigate("/alarm")}>
+            {/* ?뵒 ?뚮┝ */}
+            <Item onClick={() => navigate("/notification")}>
                 <Background $active={isAlarmActive} />
                 <Icon src={alarm} />
                 <Text className="text">NOTIFICATIONS</Text>
@@ -216,10 +330,10 @@ export default function ChatInfo() {
                         <SearchIcon src={search} />
                     </SearchWapper>
                     <InfoWapper>
-                        <UserIcon $size={126} src={user_icon} />
+                        <UserIcon $size={126} src={getProfileSrc(profile?.profile)} />
                         <NameWapper>
-                        <NameText>이민지</NameText>
-                        <UserCharge>디자이너</UserCharge>
+                        <NameText>{myName}</NameText>
+                        <UserCharge>{myCharge}</UserCharge>
                         </NameWapper>
                         <StateBox onClick={() => setOpenMenu((prev) => !prev)}>
                         <StateDot $color={currentState.color} />
@@ -250,12 +364,12 @@ export default function ChatInfo() {
                     )}
                     <HorizontalLine $length={100} />
 
-                    {/* 이게 chatlist 변경시 바뀌는 내용 */}
+                    {/* ?닿쾶 chatlist 蹂寃쎌떆 諛붾뚮뒗 ?댁슜 */}
                     <UserBox>
                         {chatList.map((item) => (
-                        <ChatItem key={item.id} onClick={() => setSelectedChat(item)}>
+                        <ChatItem key={item.type + "-" + item.id} onClick={() => setSelectedChat(item)}>
                             <ChatItemIconWrapper>
-                            <UserIcon $size={60} src={user_icon} />
+                            <UserIcon $size={60} src={getProfileSrc(item.profile)} />
                             </ChatItemIconWrapper>
                             <ChatItemInfo>
                             <ChatItemTop>
@@ -268,7 +382,7 @@ export default function ChatInfo() {
                             </ChatItemTop>
                             <ChatItemBottom>
                                 <ChatItemMsg>
-                                {item.lastMsg} · {item.time}
+                                {item.lastMsg}{" \u00B7 "}{getDisplayTime(item)}
                                 </ChatItemMsg>
                             </ChatItemBottom>
                             </ChatItemInfo>
@@ -278,33 +392,33 @@ export default function ChatInfo() {
                     </SideBox>
                     <VerticalLine />
                     <RightBox>
-                    {/* 여기가 채팅 사용자의 정보가 들어가야됨. */}
+                    {/* ?ш린媛 梨꾪똿 ?ъ슜?먯쓽 ?뺣낫媛 ?ㅼ뼱媛?쇰맖. */}
                     <TopBox>
-                        <BackIcon src={back_icon} onClick={() => navigate("/chat")} />
+                        <BackIcon src={back_icon} onClick={() => navigate("/chat", { state: { selectedChat } })} />
                         <MenuIcon src={menu} />
                     </TopBox>
                     <HorizontalLine $length={100} />
                     <MainBox>
-                        <UserIcon $size={200} src={user_icon} />
+                        <UserIcon $size={200} src={getProfileSrc(selectedChat?.profile)} />
                         <UserWapper>
-                        <UserName>{selectedChat.name}</UserName>
-                        <UserCharge>{selectedChat.charge}</UserCharge>
+                        <UserName>{selectedChat?.name || "\uCC44\uD305"}</UserName>
+                        <DetailUserCharge>{selectedChat?.charge || ""}</DetailUserCharge>
                         </UserWapper>
                         <StateWapper>
                         <StateDot
                             $color={
-                            states.find((s) => s.value === selectedChat.state)?.color
+                            states.find((s) => s.value === selectedChat?.state)?.color
                             }
                         />
                         <StateText>
-                            {states.find((s) => s.value === selectedChat.state)?.label}
+                            {states.find((s) => s.value === selectedChat?.state)?.label}
                         </StateText>
                         </StateWapper>
                         <AlarmWapper>
                         <AlarmIcon src={alarm_off_icon} />
-                        <AlarmText>알림 해제</AlarmText>
+                        <AlarmText>{"\uC54C\uB9BC \uD574\uC81C"}</AlarmText>
                         </AlarmWapper>
-                        <OutButton onClick={handleOut}>채팅방에서 나가기</OutButton>
+                        <OutButton onClick={handleOut}>{"\uCC44\uD305\uBC29\uC5D0\uC11C \uB098\uAC00\uAE30"}</OutButton>
                     </MainBox>
                     </RightBox>
                 </Layout>
@@ -313,3 +427,4 @@ export default function ChatInfo() {
     </>
   );
 }
+

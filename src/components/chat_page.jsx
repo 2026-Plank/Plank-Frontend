@@ -36,6 +36,7 @@ import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
+import { apiRequest } from "../utils/api";
 
 //css
 export const Layout = styled.div`
@@ -67,7 +68,7 @@ export const SearchIcon = styled.img`
     aspect-ratio: 1/1;
 `;
 export const InfoWapper = styled.div`
-    margin: 10% 0 10% 0;
+    margin: 10% 0 7% 0;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -85,12 +86,13 @@ export const NameText = styled.span`
     font-style: normal;
     font-weight: 600;
     line-height: normal;
-    margin: 5px;
+    margin: 12px 5px 5px;
 `;
 export const StateBox = styled.div`
     display: flex;
     align-items: center;
     margin-left: 2%;
+    margin-top: 11px;
     cursor: pointer;
 `;
 export const StateDot = styled.div`
@@ -137,9 +139,10 @@ export const StateMenu = styled.div`
     gap: 10px;
 
     position: absolute;
-    top: 310px;
-    left: 17%;
-    z-index: 10; 
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
 
     border-radius: 12px;
     background: var(--white-1, #FFF);
@@ -170,6 +173,9 @@ const UserWapper = styled.div`
     align-items: center;
     gap: 12px;
 `;
+const TopUserWapper = styled(UserWapper)`
+    gap: 22px;
+`;
 export const UserName = styled.span`
     color: var(--black-1, #000);
     font-size: 26px;
@@ -188,11 +194,16 @@ export const UserCharge = styled.span`
     align-items: flex-end;
     align-self: flex-end;
 `;
+const TopUserCharge = styled(UserCharge)`
+    margin-left: 0;
+    align-self: center;
+    transform: translateY(7px);
+`;
 export const UserBox = styled.div`
     display: flex;
     flex-direction: column;
     margin-top: 10px;
-    overflow-y: auto;
+    overflow-y: auto; 
 `;
 export const ChatItem = styled.div`
     display: flex;
@@ -226,6 +237,7 @@ export const ChatItemBottom = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-top: 4px;
 `;
 export const ChatItemMsg = styled.span`
     color: var(--Gray-7, #70716F);
@@ -325,9 +337,16 @@ const MessageInput = styled.input`
     border: 0;
     outline: 0;
 `;
+const EmptyText = styled.div`
+    color: #70716F;
+    font-size: 16px;
+    text-align: center;
+    margin: auto;
+`;
 export const NameWapper = styled.div`
     display: flex;
     height: 40px;
+    margin-top: 7px;
     margin-bottom: 5px;
 `;
 
@@ -335,10 +354,73 @@ export const NameWapper = styled.div`
 //value 저장되어야함.
 export const states = [
     { color: "3AB92C", label: "활동 중", value: "ONLINE"},
-    { color: "F0CF19", label: "자리비움", value: "IDLE"},
+    { color: "F0CF19", label: "자리 비움", value: "IDLE"},
     { color: "F04419", label: "방해 금지", value: "DND"},
     { color: "B9B9B9", label: "오프라인", value: "OFFLINE"},
 ];
+
+const getProfileSrc = (profile) => profile || user_icon;
+
+const formatTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+};
+
+const formatRelative = (value) => {
+    if (!value) return "대화 없음";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (minutes < 1) return "방금 전";
+    if (minutes < 60) return minutes + "분 전";
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "시간";
+    return Math.floor(hours / 24) + "일";
+};
+
+const normalizeDirectChat = (item) => ({
+    type: "direct",
+    id: Number(item.userId || item.id),
+    name: item.name || item.userid || item.email || "이름 없음",
+    charge: item.job || "직무 미입력",
+    lastMsg: item.lastMessage || "아직 대화가 없습니다.",
+    time: formatRelative(item.lastTimestamp),
+    lastTimestamp: item.lastTimestamp || null,
+    state: item.presenceStatus || "ONLINE",
+    profile: item.profile,
+    unreadCount: Number(item.unreadCount || 0),
+});
+
+const normalizeGroupChat = (item) => ({
+    type: "group",
+    id: Number(item.groupId || item.id),
+    name: item.name || "그룹 채팅",
+    charge: "그룹",
+    lastMsg: item.lastMessage || "아직 대화가 없습니다.",
+    time: formatRelative(item.lastTimestamp),
+    lastTimestamp: item.lastTimestamp || null,
+    state: "ONLINE",
+    profile: item.profile || null,
+    unreadCount: Number(item.unreadCount || 0),
+});
+
+const normalizeFriendChat = (friend) => {
+    const user = friend.user || friend;
+    return {
+        type: "direct",
+        id: Number(user.id),
+        name: user.name || user.userid || user.email || "\uC774\uB984 \uC5C6\uC74C",
+        charge: user.job || "\uC9C1\uBB34 \uBBF8\uC785\uB825",
+        lastMsg: "\uC544\uC9C1 \uB300\uD654\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        time: "\uB300\uD654 \uC5C6\uC74C",
+        lastTimestamp: null,
+        state: user.presenceStatus || "ONLINE",
+        profile: user.profile,
+        unreadCount: 0,
+    };
+};
 
 export default function ChatPage(){
     const navigate = useNavigate();
@@ -374,44 +456,98 @@ export default function ChatPage(){
 
     //챗 내용
     const [sendChat, setSendChat] = useState("");
-
-    //챗 정보 더미데이터
-    const [chatList, setChatList] = useState(
-        location.state?.chatList || [
-            { id: 1, name: "박재영", charge: "디자이너", lastMsg: "넹", time: "1시간", state: "ONLINE" },
-            { id: 2, name: "윤다경", charge: "개발자", lastMsg: "알겠습니다", time: "3시간", state: "IDLE" },
-            { id: 3, name: "장시후", charge: "기획자", lastMsg: "네", time: "5시간", state: "DND" },
-            { id: 4, name: "팀 프로젝트 A", charge: "그룹", lastMsg: "감사합니다", time: "14시간", state: "OFFLINE" },
-        ]
-    );
-    // selectedChat도 삭제된 항목이면 첫번째로 초기화
-    const [selectedChat, setSelectedChat] = useState(chatList[0]);
-
-    const [allMessages, setAllMessages] = useState({
-        1: [{ id: 1, text: "안녕하세요!", isMine: false, time: "2:15 PM" }],
-        2: [{ id: 1, text: "회의 언제예요?", isMine: false, time: "2:15 PM" }],
-        3: [{ id: 1, text: "네", isMine: false, time: "2:15 PM" }],
-        4: [{ id: 1, text: "감사합니다", isMine: false, time: "2:15 PM" }],
-    });
+    const [profile, setProfile] = useState(null);
+    const [chatList, setChatList] = useState([]);
+    const [selectedChat, setSelectedChat] = useState(null);
+    const [messages, setMessages] = useState([]);
 
     const chatBoxRef = useRef();
+
+    const loadChatList = async () => {
+        const [profileData, friendsData, conversationData] = await Promise.all([
+            apiRequest("/api/users/profile"),
+            apiRequest("/api/users/friends"),
+            apiRequest("/api/chats/conversations"),
+        ]);
+
+        const groups = (conversationData.groups || []).map(normalizeGroupChat);
+        const conversations = (conversationData.conversations || []).map(normalizeDirectChat);
+        const conversationById = new Map(conversations.map((item) => [item.id, item]));
+        const friends = (friendsData.friends || [])
+            .map(normalizeFriendChat)
+            .filter((item) => item.id)
+            .map((item) => ({
+                ...item,
+                ...(conversationById.get(item.id) || {}),
+            }));
+        const friendIds = new Set(friends.map((item) => item.id));
+        const extraConversations = conversations.filter((item) => !friendIds.has(item.id));
+        const nextList = [...groups, ...friends, ...extraConversations];
+
+        setProfile(profileData);
+        setCurrentState(states.find((state) => state.value === profileData?.presenceStatus) || states[0]);
+        setChatList(nextList);
+        setSelectedChat((current) => {
+            const target = current || location.state?.selectedChat;
+            if (!target) return null;
+            return nextList.find((item) => item.id === Number(target.id) && (!target.type || item.type === target.type)) || null;
+        });
+    };
+
+    useEffect(() => {
+        loadChatList().catch(() => {
+            setProfile(null);
+            setChatList([]);
+            setSelectedChat(null);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!selectedChat?.id) {
+            setMessages([]);
+            return;
+        }
+
+        const loadMessages = async () => {
+            const data = selectedChat.type === "group"
+                ? await apiRequest("/api/chats/groups/" + selectedChat.id + "/messages")
+                : await apiRequest("/api/chats/" + selectedChat.id);
+            setMessages(Array.isArray(data) ? data : []);
+        };
+
+        loadMessages().catch(() => setMessages([]));
+    }, [selectedChat?.id, selectedChat?.type]);
 
     useEffect(() => {
         if(chatBoxRef.current){
             chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
         }
-    }, [allMessages, selectedChat]);
+    }, [messages, selectedChat]);
     
-    const SendChat = () => {
-        if(sendChat.trim() === "") return;
-        const now = new Date();
-        const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-        setAllMessages(prev => ({
-            ...prev,
-            [selectedChat.id]: [...(prev[selectedChat.id] || []), { id: Date.now(), text: sendChat, isMine: true, time }]
-        }));
+    const SendChat = async () => {
+        if(sendChat.trim() === "" || !selectedChat?.id) return;
+        const message = sendChat.trim();
         setSendChat("");
+
+        const data = selectedChat.type === "group"
+            ? await apiRequest("/api/chats/groups/" + selectedChat.id + "/messages", {
+                method: "POST",
+                body: JSON.stringify({ message }),
+            })
+            : await apiRequest("/api/chats", {
+                method: "POST",
+                body: JSON.stringify({ receiverId: selectedChat.id, message }),
+            });
+
+        if (data?.chat) {
+            setMessages((prev) => [...prev, data.chat]);
+        }
+        loadChatList().catch(() => {});
     };
+
+    const myName = profile?.name || profile?.userid || "내 프로필";
+    const myCharge = profile?.job || "직무 미입력";
+    const currentUserId = Number(profile?.id);
 
     return(
         <>
@@ -457,41 +593,41 @@ export default function ChatPage(){
                                     <SearchIcon src={search} />
                                 </SearchWapper>
                                 <InfoWapper>
-                                    <UserIcon $size={126} src={user_icon} />
+                                    <UserIcon $size={126} src={getProfileSrc(profile?.profile)} />
                                     <NameWapper>
-                                        <NameText>이민지</NameText>
-                                        <UserCharge>디자이너</UserCharge>
+                                        <NameText>{myName}</NameText>
+                                        <UserCharge>{myCharge}</UserCharge>
                                     </NameWapper>
                                     <StateBox onClick={() => setOpenMenu(prev => !prev)}>
                                         <StateDot $color={currentState.color} />
                                         <StateText style={{cursor: "pointer"}}>{currentState.label}</StateText>
                                         <DetailIcon src={detail_down_icon} />
                                     </StateBox>
+                                    {openMenu && (
+                                        <StateMenu ref={menuRef}>
+                                            {states
+                                                .filter(s => s.label !== currentState.label)
+                                                .map((state, i, arr) => (
+                                                <>
+                                                        <StateWapper key={state.label} onClick={() => handleStateChange(state)} style={{cursor: "pointer"}} >
+                                                            <StateDot $color={state.color} />
+                                                            <StateText>{state.label}</StateText>
+                                                        </StateWapper>
+                                                        {i < arr.length - 1 && <StateLine /> }
+                                                </>
+                                                ))
+                                            }
+                                        </StateMenu>
+                                    )}
                                 </InfoWapper>
-                                {openMenu && (
-                                    <StateMenu ref={menuRef}>
-                                        {states
-                                            .filter(s => s.label !== currentState.label)
-                                            .map((state, i, arr) => (
-                                            <>
-                                                    <StateWapper key={state.label} onClick={() => handleStateChange(state)} style={{cursor: "pointer"}} >
-                                                        <StateDot $color={state.color} />
-                                                        <StateText>{state.label}</StateText>
-                                                    </StateWapper>
-                                                    {i < arr.length - 1 && <StateLine /> }
-                                            </> 
-                                            ))
-                                        }
-                                    </StateMenu>
-                                )}
                                 <HorizontalLine $length={100} />
 
                                 {/* 이게 chatlist 변경시 바뀌는 내용 */}
                                 <UserBox>
                                     {chatList.map((item) => (
-                                        <ChatItem key={item.id} onClick={() => setSelectedChat(item)}>
+                                        <ChatItem key={item.type + "-" + item.id} onClick={() => setSelectedChat(item)}>
                                             <ChatItemIconWrapper>
-                                                <UserIcon $size={60} src={user_icon} />
+                                                <UserIcon $size={60} src={getProfileSrc(item.profile)} />
                                             </ChatItemIconWrapper>
                                             <ChatItemInfo>
                                                 <ChatItemTop>
@@ -510,36 +646,46 @@ export default function ChatPage(){
                             <RightBox>
                                 {/* 여기가 채팅 사용자의 정보가 들어가야됨. */}
                                 <TopBox>
-                                    <UserWapper>
-                                        <UserIcon $size={60} src={user_icon} />
-                                        <UserName>{selectedChat.name}</UserName>
-                                        <UserCharge>{selectedChat.charge}</UserCharge>
-                                    </UserWapper>
-                                    <MenuIcon src={menu} onClick={() => navigate("/chatinfo", {state: {selectedChat, chatList}})} />
+                                    <TopUserWapper>
+                                        {selectedChat && <UserIcon $size={60} src={getProfileSrc(selectedChat.profile)} />}
+                                        <UserName style={!selectedChat ? { marginLeft: "20px" } : undefined}>{selectedChat?.name || "\uCC44\uD305"}</UserName>
+                                        <TopUserCharge>{selectedChat?.charge || ""}</TopUserCharge>
+                                    </TopUserWapper>
+                                    {selectedChat && <MenuIcon src={menu} onClick={() => navigate("/chatinfo", {state: {selectedChat, chatList}})} />}
                                 </TopBox>
                                 <HorizontalLine $length={100} />
                                 {/* 메세지 창 */}
                                 <ChatBox ref={chatBoxRef}>
-                                    {(allMessages[selectedChat.id] || []).map((msg) => (
-                                        <MessageRow key={msg.id} $isMine={msg.isMine}>
-                                            {!msg.isMine && <UserIcon $size={60} src={user_icon} />}
-                                            {!msg.isMine && <BubbleBox $isMine={msg.isMine}>
-                                                <BubbleText $isMine={msg.isMine}>{msg.text}</BubbleText>
+                                    {!selectedChat && <EmptyText>{"\uC67C\uCABD\uC5D0\uC11C \uB300\uD654 \uC0C1\uB300\uB97C \uC120\uD0DD\uD558\uC138\uC694."}</EmptyText>}
+                                    {selectedChat && messages.map((msg) => {
+                                        const isMine = Number(msg.senderId) === currentUserId;
+                                        return (
+                                        <MessageRow key={msg.id || String(msg.senderId) + String(msg.timestamp)} $isMine={isMine}>
+                                            {!isMine && <UserIcon $size={60} src={getProfileSrc(selectedChat.profile)} />}
+                                            {!isMine && <BubbleBox $isMine={isMine}>
+                                                <BubbleText $isMine={isMine}>{msg.message}</BubbleText>
                                             </BubbleBox>}
-                                            {!msg.isMine && <TimeText>{msg.time}</TimeText>}
+                                            {!isMine && <TimeText>{formatTime(msg.timestamp)}</TimeText>}
 
-                                            {msg.isMine && <TimeText>{msg.time}</TimeText>}
-                                            {msg.isMine && <BubbleBox $isMine={msg.isMine}>
-                                                <BubbleText $isMine={msg.isMine}>{msg.text}</BubbleText>
+                                            {isMine && <TimeText>{formatTime(msg.timestamp)}</TimeText>}
+                                            {isMine && <BubbleBox $isMine={isMine}>
+                                                <BubbleText $isMine={isMine}>{msg.message}</BubbleText>
                                             </BubbleBox>}
-                                            {msg.isMine && <UserIcon $size={60} src={user_icon} />}
+                                            {isMine && <UserIcon $size={60} src={getProfileSrc(profile?.profile)} />}
                                         </MessageRow>
-                                    ))}
+                                        );
+                                    })}
                                 </ChatBox>
                                 {/* 메세지 보내는 바 */}
                                 <UserMessageBox>
-                                    <MessageInput type="text" value={sendChat} onChange={(e) => setSendChat(e.target.value)}
-                                        onKeyDown={(e) => {if (e.key === "Enter") SendChat();}} />
+                                    <MessageInput
+                                        type="text"
+                                        value={sendChat}
+                                        disabled={!selectedChat}
+                                        placeholder={selectedChat ? "\uBA54\uC2DC\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694" : "\uB300\uD654 \uC0C1\uB300\uB97C \uC120\uD0DD\uD558\uC138\uC694"}
+                                        onChange={(e) => setSendChat(e.target.value)}
+                                        onKeyDown={(e) => {if (e.key === "Enter") SendChat();}}
+                                    />
                                     <MessageIcon src={message_icon} onClick={SendChat} />
                                 </UserMessageBox>
                             </RightBox>

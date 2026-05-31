@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import logo from "../assets/logo.svg";
 import styled, { createGlobalStyle } from "styled-components";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import logo from '../assets/logo.svg';
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { setAuthSession } from "../utils/api";
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -16,17 +17,19 @@ export const GlobalStyle = createGlobalStyle`
 `;
 
 const Container = styled.div`
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-`
+    justify-content: center;
+    padding-bottom: 24px;
+`;
 
 const Logo = styled.img`
     width: 324px;
     height: 136px;
-    margin-top: 5%;
     margin-bottom: 50px;
-`
+`;
 
 const InputWrapper = styled.div`
     position: relative;
@@ -43,7 +46,7 @@ const InputWrapper = styled.div`
     &:focus-within label {
         color: #C0DA58;
     }
-`
+`;
 
 const Input = styled.input`
     width: 100%;
@@ -54,7 +57,7 @@ const Input = styled.input`
     font-size: 22px;
     padding: 25px;
     background: transparent;
-`
+`;
 
 const Label = styled.label`
     position: absolute;
@@ -65,7 +68,7 @@ const Label = styled.label`
     font-size: 16px;
     pointer-events: none;
     transition: all 0.2s ease;
-`
+`;
 
 const FloatingWrapper = styled(InputWrapper)`
     input:focus + label,
@@ -73,13 +76,7 @@ const FloatingWrapper = styled(InputWrapper)`
         top: 15px;
         font-size: 12px;
     }
-`
-
-const LoginForm = styled.form`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-`
+`;
 
 const LoginButton = styled.button`
     width: 538px;
@@ -88,17 +85,17 @@ const LoginButton = styled.button`
     margin-top: 30px;
     font-size: 28px;
     color: white;
-    background-color: ${({ disabled }) => disabled ? '#ccc' : '#C0DA58'};
+    background-color: ${({ disabled }) => disabled ? "#ccc" : "#C0DA58"};
     border: none;
-    cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-`
+    cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
+`;
 
 const LinkGroup = styled.div`
     display: flex;
     gap: 12px;
     margin-top: 20px;
     justify-content: center;
-`
+`;
 
 const SubLink = styled(Link)`
     text-decoration: none;
@@ -108,71 +105,58 @@ const SubLink = styled(Link)`
     &:hover {
         text-decoration: underline;
     }
-`
+`;
 
 const Divider = styled.span`
     color: #ccc;
-`
+`;
 
 export default function Login() {
     const navigate = useNavigate();
-
-    const [id, setId] = useState('');
-    const [password, setPassword] = useState('');
+    const [userid, setUserid] = useState("");
+    const [password, setPassword] = useState("");
 
     const validate = () => {
-        if (!id || !password) {
-            return '아이디와 비밀번호를 입력해주세요';
+        if (!userid || !password) {
+            return "아이디와 비밀번호를 입력해주세요.";
         }
         if (password.length < 4) {
-            return '비밀번호는 4자 이상 입력해주세요';
+            return "비밀번호는 4자 이상 입력해주세요.";
         }
-        return '';
+        return "";
     };
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-
-        const errMsg = validate();
-        if (errMsg) {
-            alert(errMsg);
+    const handleLogin = async () => {
+        const err = validate();
+        if (err) {
+            alert(err);
             return;
         }
 
         try {
-            //API 주소 꼭 입력
-            const res = await fetch("http://localhost:3000/login", {
+            const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    userId: id,
-                    pw: password
-                }),
+                body: JSON.stringify({ userid, password }),
             });
+
+            const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                alert("아이디 또는 비번이 틀렸습니다!");
+                alert(data.message || "로그인에 실패했습니다.");
                 return;
             }
 
-            const data = await res.json();
-            console.log("로그인 응답:", data);
-
-            localStorage.setItem("user", JSON.stringify(data.user));
-            localStorage.setItem("token", data.token);
-
-            alert('로그인 성공');
-            setTimeout(() => {
-                navigate('/homePage');
-            }, 500);
+            setAuthSession({ token: data.token, user: data.user });
+            navigate("/homepage");
         } catch (err) {
-            alert("로그인 실패");
-            console.log(err);
+            alert("서버에 연결할 수 없습니다.");
+            console.error(err);
         }
     };
 
-    const isDisabled = !id || !password;
+    const isDisabled = !userid || !password;
 
     return (
         <>
@@ -180,30 +164,29 @@ export default function Login() {
             <Container>
                 <Logo src={logo} alt="logo" />
 
-                <LoginForm onSubmit={handleLogin}>
-                    <FloatingWrapper>
-                        <Input
-                            placeholder=" "
-                            value={id}
-                            onChange={(e) => setId(e.target.value)}
-                        />
-                        <Label>아이디</Label>
-                    </FloatingWrapper>
+                <FloatingWrapper>
+                    <Input
+                        type="text"
+                        placeholder=" "
+                        value={userid}
+                        onChange={(e) => setUserid(e.target.value)}
+                    />
+                    <Label>아이디</Label>
+                </FloatingWrapper>
 
-                    <FloatingWrapper>
-                        <Input
-                            type="password"
-                            placeholder=" "
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <Label>비밀번호</Label>
-                    </FloatingWrapper>
+                <FloatingWrapper>
+                    <Input
+                        type="password"
+                        placeholder=" "
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <Label>비밀번호</Label>
+                </FloatingWrapper>
 
-                    <LoginButton type="submit" disabled={isDisabled}>
-                        로그인
-                    </LoginButton>
-                </LoginForm>
+                <LoginButton onClick={handleLogin} disabled={isDisabled}>
+                    로그인
+                </LoginButton>
 
                 <LinkGroup>
                     <SubLink to="/#">아이디 찾기</SubLink>
@@ -214,5 +197,5 @@ export default function Login() {
                 </LinkGroup>
             </Container>
         </>
-    )
+    );
 }
