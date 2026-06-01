@@ -29,45 +29,39 @@ import logo from '../assets/logo.svg';
 import backIcon from "../assets/detail_back_icon.svg";
 import { GlobalStyle } from "../pages/homePage";
 
-import { Menu } from "../pages/homePage";
-import { Symbol } from "../pages/homePage";
-import { Logo } from "../pages/homePage";
-import { Item } from "../pages/homePage";
-import { Background } from "../pages/homePage";
-import { Icon } from "../pages/homePage";
-import { Text } from "../pages/homePage";
-import { Line } from "../pages/homePage";
+import Menu from "./menu.jsx";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 
 import { TextLine } from "./detail_page";
-import { Wapper } from "./detail_page";
-import { BackWapper } from "./detail_page";
+import { Wrapper } from "./detail_page";
+import { BackWrapper } from "./detail_page";
 import { BackText } from "./detail_page";
-import { TextWapper } from "./detail_page";
+import { TextWrapper } from "./detail_page";
 import { VerticalLine } from "./detail_page";
 import { DescriptionText } from "./detail_page";
-import { BottomWapper } from "./detail_page";
+import { BottomWrapper } from "./detail_page";
 import FeedbackForm from "./feedback.jsx";
 import { TeamBox } from "./detail_page";
-import { TeamWapper } from "./detail_page";
-import { NameWapper } from "./detail_page";
+import { TeamWrapper } from "./detail_page";
+import { NameWrapper } from "./detail_page";
 import { TeamName } from "./detail_page";
-import { TeamTextWapper } from "./detail_page";
+import { TeamTextWrapper } from "./detail_page";
 import { TitleText } from "./detail_page";
-import { MemberWapper } from "./detail_page";
-import { TextIconWapper } from "./detail_page";
+import { MemberWrapper } from "./detail_page";
+import { TextIconWrapper } from "./detail_page";
 import { MemberIcon } from "./detail_page";
 import { MemberName } from "./detail_page";
 import { TeamDeadLineText } from "./detail_page";
-import { ContentWapper } from "./detail_page";
+import { ContentWrapper } from "./detail_page";
 import { TeamContentText } from "./detail_page";
-import { ExtraWapper } from "./detail_page";
+import { ExtraWrapper } from "./detail_page";
 import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
 import { apiRequest, toApiDate } from "../utils/api";
+
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -302,18 +296,45 @@ const TeamContentInput = styled.input`
     border-bottom: ${({ $isNew }) => $isNew ? "1px solid #000" : "none"};
 `;
 
+/* ★ 추가: 팀 박스(TeamBox) 아래에 독립 배치할 슬림형 컴팩트 버튼 정의 */
+const BottomSubmitButton = styled.button`
+    display: flex;
+    width: 280px; /* ★ 데스크톱 기준 너비 대폭 축소 (슬림화) */
+    height: 48px;
+    padding: 12px 24px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px;
+    background: #c0da58;
+    color: #fff;
+    font-family: Pretendard;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(192, 218, 88, 0.3);
+    margin: 40px auto 20px auto; /* 중앙 정렬 및 여백 균형 잡기 */
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(192, 218, 88, 0.45);
+        background: #c0da58;
+    }
+
+    @media (max-width: 480px) {
+        width: 60%; /* ★ 모바일에서도 꽉 차기보다 컴팩트한 비주얼 유지 */
+        max-width: 240px;
+        height: 44px;
+        font-size: 16px;
+        margin: 30px auto 10px auto;
+    }
+`;
+
 export default function TeamDetailCreatePage(){
     const navigate = useNavigate();
     const location = useLocation();
-
-    const menus = [
-        { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
-        { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-        { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-        { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-        { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
-    ];
-    const isAlarmActive = location.pathname === "/notification";
 
     const [editingCharge, setEditingCharge] = useState(false);
     const [editingCode, setEditingCode] = useState(false);
@@ -540,37 +561,17 @@ export default function TeamDetailCreatePage(){
         <>
             <GlobalStyle />
             <PageLayout>
-                <Menu>
-                    <Symbol className="symbol" src={symbol} />
-                    <Logo className="logo" src={logo} />
-                    {menus.map((menu) => {
-                        const isActive = location.pathname === menu.path 
-                        || (menu.path === "/project" && location.pathname === "/team-modify");
-                        return (
-                            <Item key={menu.path} onClick={() => navigate(menu.path)} >
-                                <Background $active={isActive} />
-                                <Icon src={isActive ? menu.activeIcon : menu.icon} />
-                                <Text className="text">{menu.label}</Text>
-                            </Item>
-                        );
-                    })}
-                    <Line />
-                    <Item onClick={() => navigate("/notification")}>
-                        <Background $active={isAlarmActive} />
-                        <Icon src={alarm} />
-                        <Text className="text">NOTIFICATIONS</Text>
-                    </Item>
-                </Menu>
+                <Menu />
                 <ContentBox>
-                    <BackWapper onClick={() => SetData()}>
+                    <BackWrapper onClick={() => SetData()}>
                         <TeamIcon src={backIcon} />
                         <BackText>{editMode ? "수정 완료" : from === "create" ? "생성 완료" : "돌아가기"}</BackText>
-                    </BackWapper>
+                    </BackWrapper>
                     <TextLine />
-                    <Wapper>
+                    <Wrapper>
                         <TeamLogo src={default_logo} />
                         <ProjectName>{title}</ProjectName>
-                        <TextWapper>
+                        <TextWrapper>
                             <InfoText>기간</InfoText>
                             <DateWapper>
                                 <DateBox>
@@ -584,8 +585,8 @@ export default function TeamDetailCreatePage(){
                                     <DeleteIcon src={delete_icon} />
                                 </IconWapper>
                             </DateWapper>
-                        </TextWapper>
-                        <TextWapper>
+                        </TextWrapper>
+                        <TextWrapper>
                             <InfoText>담당</InfoText>
                             {editingCharge ? (
                                 <DataInput
@@ -602,10 +603,10 @@ export default function TeamDetailCreatePage(){
                             )}
                             <EditIcon src={edit_icon} onClick={() => {
                                 setChargeWidth(calcWidth(charge));
-                                setEditingCharge(prev => !prev);
+                                  setEditingCharge(prev => !prev);
                             }} />
-                        </TextWapper>
-                        <TextWapper>
+                        </TextWrapper>
+                        <TextWrapper>
                             <InfoText>참여코드</InfoText>
                             {editingCode ? (
                                 <DataInput
@@ -621,8 +622,8 @@ export default function TeamDetailCreatePage(){
                                 setCodeWidth(codeRef.current?.offsetWidth ?? 100);
                                 setEditingCode(prev => !prev);
                             }} />
-                        </TextWapper>
-                        <TextWapper>
+                        </TextWrapper>
+                        <TextWrapper>
                             <InfoText>참여자</InfoText>
                             <MemberRow>
                                 {members.length > 0 ? (
@@ -640,41 +641,41 @@ export default function TeamDetailCreatePage(){
                                 ) : (
                                     <UserName>-</UserName>
                                 )}
-                                <IconWapper $size={35} onClick={handleOpenInviteModal} style={{cursor: 'pointer', background: '#c0da58', borderRadius: '50%'}}>
+                                <IconWapper $size={35} onClick={handleOpenInviteModal} style={{cursor: 'pointer'}}>
                                     <AddIcon src={add_icon} />
                                 </IconWapper>
                             </MemberRow>
-                        </TextWapper>
-                    </Wapper>
+                        </TextWrapper>
+                    </Wrapper>
                     <TextLine $margin_size={30} />
-                    <Wapper>
-                        <BottomWapper>
-                            <TextWapper>
+                    <Wrapper>
+                        <BottomWrapper>
+                            <TextWrapper>
                                 <VerticalLine />
                                 <DescriptionText>{team.title}</DescriptionText>
-                            </TextWapper>
+                            </TextWrapper>
                             <ExplanText>{description || "-"}</ExplanText>
-                        </BottomWapper>
-                        <BottomWapper>
-                            <TextWapper>
+                        </BottomWrapper>
+                        <BottomWrapper>
+                            <TextWrapper>
                                 <VerticalLine />
                                 <DescriptionText>프로젝트 일정/구성</DescriptionText>
                                 <IconWapper $size={30} onClick={AddTeam} >
                                     <AddIcon src={edit_icon} />
                                 </IconWapper>
-                            </TextWapper>
+                            </TextWrapper>
                             <TeamBox>
                                 {Object.entries(teamGroups).map(([teamName, group], index) => (
-                                    <TeamWapper key={index}>
-                                        <NameWapper>
+                                    <TeamWrapper key={index}>
+                                        <NameWrapper>
                                             <TeamNameInput
                                                 defaultValue={teamName}
                                                 onBlur={(e) => RenameTeam(teamName, e.target.value)}
                                             />
-                                        </NameWapper>
-                                        <TeamTextWapper>
+                                        </NameWrapper>
+                                        <TeamTextWrapper>
                                             <TitleText>참여자</TitleText>
-                                            <MemberWapper>
+                                            <MemberWrapper>
                                                 {group.members.slice(0, 2).map((member, i) => (
                                                     <TextIconWapper key={i}>
                                                         <MemberIcon src={user_icon} />
@@ -682,14 +683,14 @@ export default function TeamDetailCreatePage(){
                                                     </TextIconWapper>
                                                 ))}
                                                 {group.members.length > 2 && (
-                                                    <ExtraWapper>
+                                                    <ExtraWrapper>
                                                         <ExtraIcon src={extra_icon} />
                                                         <ExtraCount>{group.members.length - 2}</ExtraCount>
-                                                    </ExtraWapper>
+                                                    </ExtraWrapper>
                                                 )}
-                                            </MemberWapper>
-                                        </TeamTextWapper>
-                                        <TeamTextWapper>
+                                            </MemberWrapper>
+                                        </TeamTextWrapper>
+                                        <TeamTextWrapper>
                                             <TitleText>기한</TitleText>
                                             {group.isNew ? (
                                                 <TeamDeadLineInput
@@ -701,10 +702,10 @@ export default function TeamDetailCreatePage(){
                                                 <TeamDeadLineInput value={group.period}
                                                     onChange={(e) => UpdatePeriod(teamName, e.target.value)} />
                                             )}
-                                        </TeamTextWapper>
-                                        <TeamTextWapper>
+                                        </TeamTextWrapper>
+                                        <TeamTextWrapper>
                                             <TitleText>내용</TitleText>
-                                            <ContentWapper>
+                                            <ContentWrapper>
                                                 {group.isNew ? (
                                                     group.explan.slice(0, 2).map((explan, i) => (
                                                         <TeamContentInput
@@ -720,13 +721,19 @@ export default function TeamDetailCreatePage(){
                                                             onChange={(e) => UpdateExplan(teamName, i, e.target.value)} />
                                                     ))
                                                 )}
-                                            </ContentWapper>
-                                        </TeamTextWapper>
-                                    </TeamWapper>
+                                            </ContentWrapper>
+                                        </TeamTextWrapper>
+                                    </TeamWrapper>
                                 ))}
                             </TeamBox>
-                        </BottomWapper>
-                    </Wapper>
+                        </BottomWrapper>
+                    </Wrapper>
+                    
+                    {/* ★ 추가: 복잡한 카드 그룹(TeamBox) 바깥 맨 하단에 독립된 슬림형 완료 버튼 배치 */}
+                    <BottomSubmitButton onClick={SetData}>
+                        {editMode ? "변경 완료" : from === "create" ? "생성 완료" : "저장 하기"}
+                    </BottomSubmitButton>
+
                 </ContentBox>
             </PageLayout>
             {showFeedbackModal && feedbackTarget && (

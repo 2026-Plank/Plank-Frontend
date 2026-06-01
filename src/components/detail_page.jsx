@@ -1,8 +1,7 @@
 import styled from "styled-components";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import symbol from "../assets/symbol.svg";
 import home from "../assets/home.svg";
 import in_home from "../assets/in_home.svg";
 import calendar from "../assets/calendar.svg";
@@ -13,14 +12,13 @@ import chat from "../assets/chat.svg";
 import in_chat from "../assets/in_chat.svg";
 import icon from "../assets/icon.svg";
 import in_icon from "../assets/in_icon.svg";
-import alarm from "../assets/alarm.svg";
-import logo from "../assets/logo.svg";
 import userIcon from "../assets/default_user_icon.svg";
 import extraIcon from "../assets/over_member_icon.svg";
 import teamLogo from "../assets/logo.svg";
 import backIcon from "../assets/detail_back_icon.svg";
 
-import { GlobalStyle, Menu, Symbol, Logo, Item, Background, Icon, Text, Line } from "../pages/homePage";
+import { GlobalStyle } from "../pages/homePage";
+import Menu from "./menu";
 import { PageLayout, ContentBox } from "./schedule_page";
 import { apiRequest, getAuthToken, mapApiTeam } from "../utils/api";
 
@@ -32,14 +30,14 @@ export const TextLine = styled.div`
   flex-shrink: 0;
 `;
 
-export const Wapper = styled.div`
+export const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: min(1120px, calc(100% - 96px));
   margin: 56px auto 0;
 `;
 
-export const BackWapper = styled.button`
+export const BackWrapper = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -92,14 +90,14 @@ const DataText = styled.span`
   line-height: 1.4;
 `;
 
-const UserWapper = styled.div`
+const UserWrapper = styled.div`
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px 10px;
 `;
 
-export const TextWapper = styled.div`
+export const TextWrapper = styled.div`
   display: flex;
   align-items: center;
   min-height: 34px;
@@ -140,7 +138,7 @@ export const DescriptionText = styled.span`
   line-height: 1.4;
 `;
 
-export const BottomWapper = styled.div`
+export const BottomWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -155,7 +153,7 @@ export const TeamBox = styled.div`
   padding-left: 24px;
 `;
 
-export const TeamWapper = styled.div`
+export const TeamWrapper = styled.div`
   min-height: 198px;
   padding: 18px 22px;
   border-radius: 12px;
@@ -165,7 +163,7 @@ export const TeamWapper = styled.div`
   flex-direction: column;
 `;
 
-export const NameWapper = styled.div`
+export const NameWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +177,7 @@ export const TeamName = styled.span`
   line-height: 1.4;
 `;
 
-export const TeamTextWapper = styled.div`
+export const TeamTextWrapper = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -195,7 +193,7 @@ export const TitleText = styled.span`
   flex-shrink: 0;
 `;
 
-export const MemberWapper = styled.div`
+export const MemberWrapper = styled.div`
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -203,7 +201,7 @@ export const MemberWapper = styled.div`
   min-width: 0;
 `;
 
-export const TextIconWapper = styled.div`
+export const TextIconWrapper = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -228,7 +226,7 @@ export const TeamDeadLineText = styled.span`
   line-height: 1.5;
 `;
 
-export const ContentWapper = styled.div`
+export const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -243,7 +241,7 @@ export const TeamContentText = styled.span`
   word-break: keep-all;
 `;
 
-export const ExtraWapper = styled.div`
+export const ExtraWrapper = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -389,14 +387,6 @@ const fallbackTeam = {
   ],
 };
 
-const menus = [
-  { path: "/homepage", icon: home, activeIcon: in_home, label: "HOME" },
-  { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-  { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-  { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-  { path: "/mypage", icon, activeIcon: in_icon, label: "MY PAGE" },
-];
-
 const toList = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).map(String);
   if (typeof value === "string") return value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -453,14 +443,15 @@ export default function TeamDetailPage() {
     ...(serverTeam ?? location.state?.team ?? {}),
   };
 
-  const normalizedTeam = {
+  const normalizedTeam = useMemo(() => ({
     ...team,
     members: Array.isArray(team.members) ? team.members : [],
     team_explan: Array.isArray(team.team_explan) ? team.team_explan : [],
     team_deadline: Array.isArray(team.team_deadline) ? team.team_deadline : [],
-  };
-  const groups = buildGroups(normalizedTeam);
-  const isAlarmActive = location.pathname === "/notification";
+  }), [serverTeam, location.state?.team]);
+
+  // 최적화: 타이핑 시 리렌더링되어도 buildGroups 연산이 재수행되지 않음
+  const groups = useMemo(() => buildGroups(normalizedTeam), [normalizedTeam]);
   const canUseServer = Boolean(getAuthToken() && normalizedTeam.id);
 
   useEffect(() => {
@@ -530,129 +521,107 @@ export default function TeamDetailPage() {
     <>
       <GlobalStyle />
       <PageLayout>
-        <Menu>
-          <Symbol className="symbol" src={symbol} />
-          <Logo className="logo" src={logo} />
-
-          {menus.map((menu) => {
-            const isActive = location.pathname === menu.path || (menu.path === "/project" && location.pathname === "/detail-page");
-            return (
-              <Item key={menu.path} onClick={() => navigate(menu.path)}>
-                <Background $active={isActive} />
-                <Icon src={isActive ? menu.activeIcon : menu.icon} />
-                <Text className="text">{menu.label}</Text>
-              </Item>
-            );
-          })}
-
-          <Line />
-
-          <Item onClick={() => navigate("/notification")}>
-            <Background $active={isAlarmActive} />
-            <Icon src={alarm} />
-            <Text className="text">NOTIFICATIONS</Text>
-          </Item>
-        </Menu>
+        <Menu />
 
         <ContentBox>
-          <BackWapper type="button" onClick={() => navigate("/project")}>
-            <ProjectIcon src={backIcon} alt="" />
+          <BackWrapper type="button" onClick={() => navigate("/project")}>
+            <ProjectIcon src={backIcon} alt="뒤로가기" />
             <BackText>돌아가기</BackText>
-          </BackWapper>
+          </BackWrapper>
           <TextLine />
 
-          <Wapper>
+          <Wrapper>
             <DetailHeader>
-              <ProjectLogo src={normalizedTeam.logo ?? teamLogo} alt="" />
+              <ProjectLogo src={normalizedTeam.logo ?? teamLogo} alt="프로젝트 로고" />
               <ProjectName>{normalizedTeam.title || "프로젝트 명"}</ProjectName>
             </DetailHeader>
 
-            <TextWapper>
+            <TextWrapper>
               <InfoText>기간</InfoText>
               <DataText>{normalizedTeam.period || "-"}</DataText>
-            </TextWapper>
-            <TextWapper>
+            </TextWrapper>
+            <TextWrapper>
               <InfoText>담당</InfoText>
               <DataText>{normalizedTeam.charge || "-"}</DataText>
-            </TextWapper>
-            <TextWapper>
+            </TextWrapper>
+            <TextWrapper>
               <InfoText>참여코드</InfoText>
               <DataText>{normalizedTeam.code || "-"}</DataText>
-            </TextWapper>
-            <TextWapper>
+            </TextWrapper>
+            <TextWrapper>
               <InfoText>참여자</InfoText>
-              <UserWapper>
+              <UserWrapper>
                 {normalizedTeam.members.length > 0 ? (
                   normalizedTeam.members.map((member, index) => (
                     <MemberRow key={`${member.name ?? "member"}-${index}`}>
-                      <UserIcon src={userIcon} alt="" />
+                      <UserIcon src={userIcon} alt="유저 아이콘" />
                       <NameText>{member.name || "이름 없음"}</NameText>
                     </MemberRow>
                   ))
                 ) : (
                   <EmptyText>-</EmptyText>
                 )}
-              </UserWapper>
-            </TextWapper>
-          </Wapper>
+              </UserWrapper>
+            </TextWrapper>
+          </Wrapper>
 
           <TextLine $margin_size={48} />
 
-          <Wapper>
-            <BottomWapper>
-              <TextWapper>
+          <Wrapper>
+            <BottomWrapper>
+              <TextWrapper>
                 <VerticalLine />
                 <DescriptionText>{normalizedTeam.title || "프로젝트 명"}</DescriptionText>
-              </TextWapper>
+              </TextWrapper>
               <ExplanText>{normalizedTeam.description || "프로젝트 설명"}</ExplanText>
-            </BottomWapper>
+            </BottomWrapper>
 
-            <BottomWapper>
-              <TextWapper>
+            <BottomWrapper>
+              <TextWrapper>
                 <VerticalLine />
                 <DescriptionText>프로젝트 일정/구성</DescriptionText>
-              </TextWapper>
+              </TextWrapper>
 
               <TeamBox>
                 {groups.length > 0 ? (
                   groups.map((group) => (
-                    <TeamWapper key={group.name}>
-                      <NameWapper>
+                    <TeamWrapper key={group.name}>
+                      <NameWrapper>
                         <TeamName>{group.name}</TeamName>
-                      </NameWapper>
+                      </NameWrapper>
 
-                      <TeamTextWapper>
+                      <TeamTextWrapper>
                         <TitleText>참여자</TitleText>
-                        <MemberWapper>
+                        <MemberWrapper>
                           {group.members.length > 0 ? (
                             <>
                               {group.members.slice(0, 2).map((member, index) => (
-                                <TextIconWapper key={`${group.name}-${member.name}-${index}`}>
-                                  <MemberIcon src={userIcon} alt="" />
+                                <TextIconWrapper key={`${group.name}-${member.name}-${index}`}>
+                                  <MemberIcon src={userIcon} alt="멤버 아이콘" />
                                   <MemberName>{member.name || "이름 없음"}</MemberName>
-                                </TextIconWapper>
+                                </TextIconWrapper>
                               ))}
                               {group.members.length > 2 && (
-                                <ExtraWapper>
-                                  <ExtraIcon src={extraIcon} alt="" />
+                                <ExtraWrapper>
+                                  <ExtraIcon src={extraIcon} alt="더보기" />
                                   <ExtraCount>{group.members.length - 2}</ExtraCount>
-                                </ExtraWapper>
+                                </ExtraWrapper>
                               )}
                             </>
                           ) : (
                             <EmptyText>-</EmptyText>
                           )}
-                        </MemberWapper>
-                      </TeamTextWapper>
+                        </MemberWrapper>
+                      </TeamTextWrapper>
 
-                      <TeamTextWapper>
+                      <TeamTextWrapper>
                         <TitleText>기한</TitleText>
                         <TeamDeadLineText>{group.deadline}</TeamDeadLineText>
-                      </TeamTextWapper>
+                      </TeamTextWrapper>
 
-                      <TeamTextWapper>
+                      <TeamTextWrapper>
                         <TitleText>내용</TitleText>
-                        <ContentWapper>
+                        <ContentWrapper>
                           {group.contents.length > 0 ? (
                             group.contents.slice(0, 2).map((content, index) => (
                               <TeamContentText key={`${group.name}-content-${index}`}>{content}</TeamContentText>
@@ -660,21 +629,21 @@ export default function TeamDetailPage() {
                           ) : (
                             <EmptyText>-</EmptyText>
                           )}
-                        </ContentWapper>
-                      </TeamTextWapper>
-                    </TeamWapper>
+                        </ContentWrapper>
+                      </TeamTextWrapper>
+                    </TeamWrapper>
                   ))
                 ) : (
                   <EmptyText>등록된 일정/구성이 없습니다.</EmptyText>
                 )}
               </TeamBox>
-            </BottomWapper>
+            </BottomWrapper>
 
-            <BottomWapper>
-              <TextWapper>
+            <BottomWrapper>
+              <TextWrapper>
                 <VerticalLine />
                 <DescriptionText>피드백</DescriptionText>
-              </TextWapper>
+              </TextWrapper>
 
               <FeedbackPanel>
                 <FeedbackForm onSubmit={submitFeedback}>
@@ -704,8 +673,8 @@ export default function TeamDetailPage() {
                   )}
                 </FeedbackList>
               </FeedbackPanel>
-            </BottomWapper>
-          </Wapper>
+            </BottomWrapper>
+          </Wrapper>
         </ContentBox>
       </PageLayout>
     </>

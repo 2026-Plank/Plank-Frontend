@@ -6,37 +6,38 @@ import searchIcon from "../assets/search_icon.png";
 import menuIcon from "../assets/menu.svg";
 import editIcon from "../assets/modify_icon.svg";
 import deleteIcon from "../assets/delete_icon.svg";
-import hideIcon from "../assets/hiding_down_icon.svg";
+import hideIcon from "../assets/hiding_icon.svg";
 
-import symbol from "../assets/symbol.svg";
-import home from "../assets/home.svg";
-import in_home from "../assets/in_home.svg";
-import calendar from "../assets/calendar.svg";
-import in_calendar from "../assets/in_calendar.svg";
-import pen from "../assets/pen.svg";
-import in_pen from "../assets/in_pen.svg";
-import chat from "../assets/chat.svg";
-import in_chat from "../assets/in_chat.svg";
-import icon from "../assets/icon.svg";
-import in_icon from "../assets/in_icon.svg";
-import alarm from "../assets/alarm.svg";
-import logo from "../assets/logo.svg";
-
-import { GlobalStyle, Menu, Symbol, Logo, Item, Background, Icon, Text, Line } from "../pages/homePage";
+import { GlobalStyle } from "../pages/homePage";
 import { PageLayout, ContentBox } from "./schedule_page";
 import { apiRequest, getAuthToken, mapApiTeam } from "../utils/api";
+import Menu from "./menu";
 
 const HeaderBar = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
+
   width: 100%;
-  padding: 22px 30px 10px 20px;
+  padding: 16px;
+
+  position: sticky;
+  top: 0;
+  z-index: 5;
+
+  background: #f9f9f8;
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+    gap: 12px;
+  }
 `;
 
 const SearchBox = styled.div`
-  width: min(826px, 100%);
+  flex: 1;
+  max-width: 826px;
+  display: flex;
   height: 52px;
   padding: 0 20px 0 22px;
   align-items: center;
@@ -45,7 +46,12 @@ const SearchBox = styled.div`
   border: 1px solid #c0da58;
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-  display: flex;
+
+  @media (max-width: 480px) {
+    width: calc(100% - 120px);
+    min-width: 0;
+    height: 44px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -54,26 +60,46 @@ const SearchInput = styled.input`
   border: none;
   outline: none;
   font-size: 16px;
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const SearchIconImg = styled.img`
   width: 24px;
   height: 24px;
   cursor: pointer;
+
+  @media (max-width: 480px) {
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 const JoinButton = styled.button`
-  min-width: 146px;
+  flex-shrink: 0;
+
+  width: 120px;
   height: 52px;
-  padding: 0 34px;
+
   border-radius: 100px;
   border: 1px solid #c0da58;
+
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
   color: #111;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
+
   cursor: pointer;
+
+  @media (max-width: 480px) {
+    width: 100px;
+    height: 44px;
+    font-size: 14px;
+  }
 `;
 
 const TeamBox = styled.div`
@@ -81,6 +107,16 @@ const TeamBox = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(300px, 394px));
   gap: 20px;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+ 
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    padding: 12px 16px;
+    gap: 14px;
+  }
 `;
 
 const TeamBarContainer = styled.article`
@@ -88,10 +124,10 @@ const TeamBarContainer = styled.article`
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 418px;
+  min-height: 350px;
   padding: 26px 32px 30px;
   justify-content: center;
-  gap: 22px;
+  gap: 5px;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
@@ -99,6 +135,12 @@ const TeamBarContainer = styled.article`
   &:hover {
     border: 1px solid #c0da58;
     box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.3), 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 480px) {
+    min-height: unset;
+    padding: 20px 20px 24px;
+    gap: 5px;
   }
 `;
 
@@ -110,9 +152,17 @@ const EllipsisIcon = styled.img`
 `;
 
 const TextBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 394px));
+  gap: 20px;
+  padding: 20px;
+  padding-bottom: 140px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    padding: 12px 16px 140px;
+    gap: 14px;
+  }
 `;
 
 const TeamBarTitle = styled.h2`
@@ -120,6 +170,10 @@ const TeamBarTitle = styled.h2`
   font-size: 24px;
   font-weight: 600;
   line-height: 1.35;
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
 `;
 
 const DetailBox = styled.div`
@@ -177,18 +231,33 @@ const DetailText = styled.button`
 
 const CreateButton = styled.button`
   position: fixed;
-  right: 30px;
-  bottom: 30px;
-  width: 64px;
-  height: 64px;
+
+  right: 16px;
+  bottom: 80px;
+
+  width: 56px;
+  height: 56px;
+
   border-radius: 50%;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   border: 1px solid #c0da58;
   background: #fff;
+
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
   cursor: pointer;
+  z-index: 11;
+
+  @media (min-width: 481px) {
+    right: 30px;
+    bottom: 30px;
+    width: 64px;
+    height: 64px;
+  }
 `;
 
 const CreateIcon = styled.img`
@@ -215,6 +284,7 @@ const MenuBox = styled.div`
 const MenuWapper = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -245,34 +315,40 @@ const CardTop = styled.div`
 
 const HideWapper = styled.button`
   position: fixed;
-  left: 150px;
-  bottom: 60px;
+
+  left: 16px;
+  bottom: 80px;
+
   display: flex;
   align-items: center;
   gap: 6px;
+
   border: 0;
   background: transparent;
+
   cursor: pointer;
+  z-index: 11;
+
+  @media (min-width: 481px) {
+    left: 150px;
+    bottom: 30px;
+  }
 `;
 
 const HideText = styled.span`
   color: #70716f;
   font-size: 18px;
   font-weight: 500;
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+  }
 `;
 
 const HideIcon = styled.img`
   width: 24px;
   height: 24px;
 `;
-
-const menus = [
-  { path: "/homepage", icon: home, activeIcon: in_home, label: "HOME" },
-  { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-  { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-  { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-  { path: "/mypage", icon, activeIcon: in_icon, label: "MY PAGE" },
-];
 
 const initialTeams = [
   {
@@ -396,29 +472,7 @@ export default function TeamPage() {
     <>
       <GlobalStyle />
       <PageLayout>
-        <Menu>
-          <Symbol className="symbol" src={symbol} />
-          <Logo className="logo" src={logo} />
-
-          {menus.map((menu) => {
-            const isActive = location.pathname === menu.path;
-            return (
-              <Item key={menu.path} onClick={() => navigate(menu.path)}>
-                <Background $active={isActive} />
-                <Icon src={isActive ? menu.activeIcon : menu.icon} />
-                <Text className="text">{menu.label}</Text>
-              </Item>
-            );
-          })}
-
-          <Line />
-
-          <Item onClick={() => navigate("/notification")}>
-            <Icon src={alarm} />
-            <Text className="text">NOTIFICATIONS</Text>
-          </Item>
-        </Menu>
-
+        <Menu />
         <ContentBox>
           <HeaderBar>
             <SearchBox>
