@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 
 import previous_arrow from "../assets/arrow_previous.svg";
 import symbol from "../assets/symbol.svg";
@@ -27,6 +26,7 @@ import { Background } from "../pages/homePage";
 import { Icon } from "../pages/homePage";
 import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
+import { apiRequest } from "../utils/api";
 
 export const PageLayout = styled.div`
     display: flex;
@@ -445,7 +445,7 @@ export default function SchedulePage() {
     };
 
     const isMissingTeamError = (requestError) => {
-        const errorText = requestError.response?.data?.error || requestError.message || "";
+        const errorText = requestError.data?.error || requestError.message || "";
         return /ORA-02291|FK_TASK_TEAM|teamId/i.test(errorText);
     };
 
@@ -454,10 +454,10 @@ export default function SchedulePage() {
         setError("");
         try {
             const url = targetTeamId ? `/api/schedules/${targetTeamId}` : "/api/schedules";
-            const response = await axios.get(url);
-            setSchedules(response.data.schedules || []);
+            const data = await apiRequest(url);
+            setSchedules(data.schedules || []);
         } catch (loadError) {
-            setError(loadError.response?.data?.error || "일정을 불러오지 못했습니다.");
+            setError(loadError.message || "일정을 불러오지 못했습니다.");
         } finally {
             setLoading(false);
         }
@@ -557,12 +557,18 @@ export default function SchedulePage() {
 
         try {
             if (editingId) {
-                await axios.put(`/api/schedules/${editingId}`, payload);
+                await apiRequest(`/api/schedules/${editingId}`, {
+                    method: "PUT",
+                    body: JSON.stringify(payload),
+                });
                 setMessage("일정을 수정했어요.");
             } else {
                 try {
-                    const response = await axios.post("/api/schedules", payload);
-                    if (teamId && !response.data?.schedule?.teamId) {
+                    const data = await apiRequest("/api/schedules", {
+                        method: "POST",
+                        body: JSON.stringify(payload),
+                    });
+                    if (teamId && !data?.schedule?.teamId) {
                         clearStoredTeamId();
                     }
                 } catch (postError) {
@@ -573,7 +579,10 @@ export default function SchedulePage() {
                     clearStoredTeamId();
                     const retryPayload = { ...payload };
                     delete retryPayload.teamId;
-                    await axios.post("/api/schedules", retryPayload);
+                    await apiRequest("/api/schedules", {
+                        method: "POST",
+                        body: JSON.stringify(retryPayload),
+                    });
                 }
                 setMessage("일정을 추가했어요.");
             }
@@ -581,7 +590,7 @@ export default function SchedulePage() {
             setSelectedDate(form.targetDate);
             resetForm();
         } catch (submitError) {
-            setError(submitError.response?.data?.error || "일정 저장에 실패했습니다.");
+            setError(submitError.message || "일정 저장에 실패했습니다.");
         }
     };
 
@@ -599,7 +608,7 @@ export default function SchedulePage() {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`/api/schedules/${id}`);
+            await apiRequest(`/api/schedules/${id}`, { method: "DELETE" });
             setMessage("일정을 삭제했어요.");
             setError("");
             if (editingId === id) {
@@ -607,7 +616,7 @@ export default function SchedulePage() {
             }
             await loadSchedules();
         } catch (deleteError) {
-            setError(deleteError.response?.data?.error || "일정 삭제에 실패했습니다.");
+            setError(deleteError.message || "일정 삭제에 실패했습니다.");
         }
     };
 
