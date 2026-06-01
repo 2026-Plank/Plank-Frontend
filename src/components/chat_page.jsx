@@ -9,55 +9,55 @@ import detail_down_icon from "../assets/state_down.svg";
 import menu from "../assets/menu.svg";
 import message_icon from "../assets/message.svg";
 import user_icon from "../assets/default_user_icon.svg";
-
-import symbol from '../assets/symbol.svg';
-import home from '../assets/home.svg';
-import in_home from '../assets/in_home.svg';
-import calendar from '../assets/calendar.svg';
-import in_calendar from '../assets/in_calendar.svg';
-import pen from '../assets/pen.svg';
-import in_pen from '../assets/in_pen.svg';
-import chat from '../assets/chat.svg';
-import in_chat from '../assets/in_chat.svg';
-import icon from '../assets/icon.svg';
-import in_icon from '../assets/in_icon.svg';
-import alarm from '../assets/alarm.svg';
-import setting from '../assets/setting.svg';
-import logo from '../assets/logo.svg';
+import back_icon from "../assets/detail_back_icon.svg";
 
 import { GlobalStyle } from "../pages/homePage";
-import { Menu } from "../pages/homePage";
-import { Symbol } from "../pages/homePage";
-import { Logo } from "../pages/homePage";
-import { Item } from "../pages/homePage";
-import { Background } from "../pages/homePage";
-import { Icon } from "../pages/homePage";
-import { Text } from "../pages/homePage";
-import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
+import Menu from "./menu";
 
 //css
 export const Layout = styled.div`
     display: flex;
-    height: 100vh;
+    height: 100%;
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+    }
 `;
 export const SearchWapper = styled.div`
     display: flex;
-    width: 354px;
-    height: 52px;
-    padding: 13px 20px 13px 22px;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 10px;
+    // width: 354px;
+    // height: 52px;
+    // padding: 13px 20px 13px 22px;
+    // justify-content: center;
+    // align-items: flex-start;
+    // gap: 10px;
 
+    // border-radius: 100px;
+    // border: 1px solid var(--Light-Green-2, #C0DA58);
+    // background: var(--white-1, #FFF);
+    // box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+    display: flex;
+
+    width: 100%;
+    height: 52px;
+  
+    padding: 13px 20px 13px 22px;
+  
+    gap: 10px;
+  
     border-radius: 100px;
-    border: 1px solid var(--Light-Green-2, #C0DA58);
-    background: var(--white-1, #FFF);
+    border: 1px solid #c0da58;
+    background: #fff;
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+  
+    @media (max-width: 480px) {
+      height: 44px;
+    }
 `;
 export const SearchBox = styled.input`
-    width: 330px;
+    flex: 1;
     border: none;
     outline: none;
 `;
@@ -75,9 +75,14 @@ export const InfoWapper = styled.div`
     justify-content: center;
 `;
 export const UserIcon = styled.img`
-    width: ${({$size}) => $size}px;
-    height: ${({$size}) => $size}px;
-    border-radius: 126px;
+    width: ${({ $size }) => $size}px;
+    height: ${({ $size }) => $size}px;
+    border-radius: 50%;
+  
+    @media (max-width: 480px) {
+      width: ${({ $size }) => Math.min($size, 80)}px;
+      height: ${({ $size }) => Math.min($size, 80)}px;
+    }
 `;
 export const NameText = styled.span`
     color: var(--black-1, #000);
@@ -124,7 +129,11 @@ export const HorizontalLine = styled.div`
 export const VerticalLine = styled.div`
     width: 1px;
     height: 100%;
-    background: #C9C9C8;
+    background: #c9c9c8;
+
+    @media (max-width: 480px) {
+        display: none;
+    }
 `;
 export const StateMenu = styled.div`
     display: flex;
@@ -157,13 +166,24 @@ export const StateWapper = styled.div`
 `;
 export const SideBox = styled.div`
     margin: 2%;
+    width: 350px;
+    overflow-y: auto;
+
+    @media (max-width: 480px) {
+        width: 100%;
+        margin: 0;
+        padding: 16px;
+
+        display: ${({ $isOpen }) =>
+        $isOpen ? "none" : "block"};
+    }
 `;
 export const TopBox = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    margin: 2% 0;
+  
+    padding: 12px 16px;
 `;
 const UserWapper = styled.div`
     display: flex;
@@ -246,7 +266,15 @@ export const RightBox = styled.div`
     display: flex;
     flex-direction: column;
     flex: 1;
-    overflow: hidden;  /* 추가 */
+    overflow: hidden;
+
+    @media (max-width: 480px) {
+        width: 100%;
+        height: 100%;
+
+        display: ${({ $isOpen }) =>
+        $isOpen ? "flex" : "none"};
+    }
 `;
 
 const ChatBox = styled.div`
@@ -279,6 +307,11 @@ const BubbleBox = styled.div`
     border-radius: 100px;
     background: ${({ $isMine }) => $isMine ? "var(--Light-Green-4, #D3EB73)" : "var(--Gray-4, #E0E0E0)"};
     max-width: 600px;
+
+    @media (max-width: 480px) {
+      max-width: 75%;
+      padding: 12px 18px;
+    }
 `;
 
 const BubbleText = styled.span`
@@ -291,6 +324,10 @@ const BubbleText = styled.span`
     white-space: pre-wrap;
     word-break: break-word;
     background: ${({ $isMine }) => $isMine ? "var(--Light-Green-4, #D3EB73)" : "var(--Gray-4, #E0E0E0)"};
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
 `;
 const TimeText = styled.span`
     color: var(--Gray-7, #70716F);
@@ -312,12 +349,33 @@ const UserMessageBox = styled.div`
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
 
     flex-shrink: 0;
-    margin: 0 20px 20px 20px;
+    margin: 0 20px 20px;
+    box-sizing: border-box; /* 패딩이 높이/너비 계산에 포함되도록 안전장치 추가 */
+  
+    @media (max-width: 480px) {
+      height: 48px; /* 보더라인 겹침을 방지하는 유연한 높이 크기 조정 */
+      padding: 0px 20px 0px 16px; /* ★ 위아래 패딩을 줄여 내부 인풋이 보더를 깨지 않도록 수정 */
+      margin: 10px 12px 0px; /* ★ 하단 여백(마지막 값)을 완전히 바닥에 밀착(0px) */
+      
+      /* 만약 내부에 input 태그가 있다면 아래 속성도 함께 적용되도록 보장합니다 */
+      input {
+        height: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+      }
+    }
 `;
 const MessageIcon = styled.img`
     width: 30px;
     height: 30px;
     aspect-ratio: 1/1;
+
+    @media (max-width: 480px) {
+        width: 20px;
+        height: 20px;
+        aspect-ratio: 1/1;
+    }
 `;
 const MessageInput = styled.input`
     flex: 1;
@@ -330,7 +388,26 @@ export const NameWapper = styled.div`
     height: 40px;
     margin-bottom: 5px;
 `;
+const BackIcon = styled.img`
+    width: 20px;
+    height: 20px;
+    aspect-ratio: 1/1;
+`;
+const BackButton = styled.button`
+  display: none;
 
+  @media (max-width: 480px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    border: none;
+    background: transparent;
+  }
+`;
 
 //value 저장되어야함.
 export const states = [
@@ -344,19 +421,10 @@ export default function ChatPage(){
     const navigate = useNavigate();
     const location = useLocation();
 
-    const menus = [
-        { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
-        { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-        { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-        { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-        { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
-    ];
-
-    const isAlarmActive = location.pathname === "/notification";
-
     const [openMenu, setOpenMenu] = useState(false);
     const [currentState, setCurrentState] = useState(states[0]);
     const menuRef = useRef();
+    const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
     useEffect(() => {
         const handleClick = (e) => {
@@ -417,41 +485,10 @@ export default function ChatPage(){
         <>
             <GlobalStyle />
                 <PageLayout>
-                    <Menu>
-                        <Symbol className="symbol" src={symbol} />
-                        <Logo className="logo" src={logo} />
-
-                        {menus.map((menu) => {
-                            const isActive = location.pathname === menu.path;
-
-                            return (
-                                <Item
-                                    key={menu.path}
-                                    onClick={() => navigate(menu.path)}
-                                >
-                                    <Background $active={isActive} />
-
-                                    <Icon
-                                        src={isActive ? menu.activeIcon : menu.icon}
-                                    />
-
-                                    <Text className="text">{menu.label}</Text>
-                                </Item>
-                            );
-                        })}
-
-                        <Line />
-
-                        {/* 🔔 알림 */}
-                        <Item onClick={() => navigate("/notification")}>
-                            <Background $active={isAlarmActive} />
-                            <Icon src={alarm} />
-                            <Text className="text">NOTIFICATIONS</Text>
-                        </Item>
-                    </Menu>
+                    <Menu />
                     <ContentBox>
                         <Layout>
-                            <SideBox>
+                            <SideBox $isOpen={isMobileChatOpen}>
                                 <SearchWapper>
                                     <SearchBox type="search" />
                                     <SearchIcon src={search} />
@@ -489,7 +526,13 @@ export default function ChatPage(){
                                 {/* 이게 chatlist 변경시 바뀌는 내용 */}
                                 <UserBox>
                                     {chatList.map((item) => (
-                                        <ChatItem key={item.id} onClick={() => setSelectedChat(item)}>
+                                            <ChatItem
+                                                key={item.id}
+                                                onClick={() => {
+                                                    setSelectedChat(item);
+                                                    setIsMobileChatOpen(true);
+                                                }}
+                                            >
                                             <ChatItemIconWrapper>
                                                 <UserIcon $size={60} src={user_icon} />
                                             </ChatItemIconWrapper>
@@ -507,9 +550,13 @@ export default function ChatPage(){
                                 </UserBox>
                             </SideBox>
                             <VerticalLine />
-                            <RightBox>
+                            <RightBox $isOpen={isMobileChatOpen}>
                                 {/* 여기가 채팅 사용자의 정보가 들어가야됨. */}
                                 <TopBox>
+                                    <BackButton onClick={() => setIsMobileChatOpen(false)}>
+                                        <BackIcon src={back_icon} />
+                                    </BackButton>
+
                                     <UserWapper>
                                         <UserIcon $size={60} src={user_icon} />
                                         <UserName>{selectedChat.name}</UserName>

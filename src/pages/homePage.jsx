@@ -1,24 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { useNavigate } from "react-router-dom";
+import Menu from "../components/menu";
+import { PageLayout, ContentBox } from "../components/schedule_page";
 
 // 이미지 임포트
-import symbol from '../assets/symbol.svg';
-import in_home from '../assets/in_home.svg';
-import calendarIcon from '../assets/calendar.svg';
-import pen from '../assets/pen.svg';
-import chat from '../assets/chat.svg';
-import icon from '../assets/icon.svg';
-import alarm from '../assets/alarm.svg'; // 알림 아이콘
-import setting from '../assets/setting.svg';
-import logo from '../assets/logo.svg';
 import profile from '../assets/profile.svg';
 import calendar_left from '../assets/calendar_left.svg';
 import calendar_right from '../assets/calendar_right.svg';
 import week_left from '../assets/week_left.svg';
 import week_right from '../assets/week_right.svg';
 import addIcon from '../assets/add.svg';
-import editIcon from '../assets/edit.svg';
+import editIcon from '../assets/modify_icon.svg';
 import deleteIcon from '../assets/delete.svg';
 
 export const GlobalStyle = createGlobalStyle`
@@ -27,40 +20,36 @@ export const GlobalStyle = createGlobalStyle`
     body { background-color: #FFF; overflow-x: hidden; }
 `;
 
-/* --- Styled Components (생략 없이 유지) --- */
-export const Menu = styled.div`
-    height: 100vh; width: 130px; background-color: #F9F9F8; transition: 0.3s ease-in-out;
-    display: flex; flex-direction: column; align-items: center; position: fixed; z-index: 10;
-    &:hover { width: 300px; }
-    &:hover .text { opacity: 1; transform: translateX(0); }
-    &:hover .symbol { display: none; }
-    &:hover .logo { display: block; }
-`;
-export const Symbol = styled.img` height: 70px; width: 62px; margin-top: 65px; margin-bottom: 50px; `;
-export const Logo = styled.img` width: 132px; height: 65px; margin-top: 65px; margin-bottom: 50px; display: none; `;
-export const Item = styled.div` width: 100%; height: 70px; display: flex; align-items: center; padding-left: 30px; position: relative; cursor: pointer;
-    background-color: #F9F9F8;
-`;
-export const Background = styled.div`
-    width: 52px; height: 52px; position: absolute; left: 37px; top: 50%; transform: translateY(-50%);
-    background: #FFF; border-radius: 50%;
-    box-shadow: ${({ $active }) => $active ? "0 0 20px rgba(192, 218, 88, 0.4)" : "none"};
-    display: ${({ $active }) => ($active ? "block" : "none")};
-    transition: 0.3s;
-    ${Menu}:hover & { width: calc(100% - 40px); border-radius: 8px; left: 20px; }
-`;
-export const Icon = styled.img` width: 24px; height: 24px; margin-left: 21px; z-index: 2; `;
-export const Text = styled.span` 
-    margin-left: 40px; font-size: 16px; color: #333; font-weight: 500; 
-    white-space: nowrap; opacity: 0; transform: translateX(-10px); 
-    transition: 0.3s; z-index: 2; 
-`;
-export const Line = styled.div` width: 60px; height: 1px; background-color: #E5E5E5; margin: 30px 0; transition: 0.3s; ${Menu}:hover & { width: 240px; } `;
+const MainContent = styled.div`
+    display: grid;
+    grid-template-columns: 380px 1fr;
 
-const Container = styled.div` display: flex; width: 100vw; height: 100vh; `;
-const MainContent = styled.div` flex: 1; margin-left: 130px; display: grid; grid-template-columns: 380px 1fr; height: 100vh; `;
-const LeftPanel = styled.div` border-right: 1px solid #EDEDED; padding: 60px 35px; display: flex; flex-direction: column; overflow-y: auto; `;
-const MiddlePanel = styled.div` padding: 60px 80px; overflow-y: auto; `;
+    min-height: 100%;
+    width: 100%;
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr;
+    }
+`;
+const LeftPanel = styled.div`
+    border-right: 1px solid #EDEDED;
+    padding: 60px 35px;
+    display: flex;
+    flex-direction: column;
+
+    @media (max-width: 480px) {
+        border-right: none;
+        border-bottom: 1px solid #EDEDED;
+        padding: 20px;
+    } 
+`;
+const MiddlePanel = styled.div`
+    padding: 60px 80px;
+
+    @media (max-width: 480px) {
+        padding: 20px;
+    }
+`;
 
 /* --- Mini Calendar & UI Components --- */
 const MiniCalendar = ({ currentViewDate, setCurrentViewDate }) => {
@@ -120,6 +109,7 @@ export default function HomePage() {
     const [deleteMode, setDeleteMode] = useState(null);
     const [addingTo, setAddingTo] = useState(null);
     const [editingId, setEditingId] = useState(null);
+    const [profileData, setProfileData] = useState(null);
 
     const [projects, setProjects] = useState([
         { id: 1, text: "[UIUX 개선 프로젝트] 기획서 작성", checked: true },
@@ -168,84 +158,106 @@ export default function HomePage() {
             setAddingTo(null);
         }
     };
+    const loadData = async () => {
+        const config = getAuthConfig();
+        if (!config) {
+            setError("로그인이 필요합니다.");
+            return;
+        }
+
+        try {
+            setError("");
+            const [profileRes, friendsRes, requestsRes] = await Promise.all([
+                axios.get("/api/users/profile", config),
+                axios.get("/api/users/friends", config),
+                axios.get("/api/users/friends/requests", config)
+            ]);
+            setProfileData(profileRes.data);
+            setFriends(friendsRes.data.friends || []);
+            setRequests(requestsRes.data.requests || []);
+            const [receivedRes, sentRes] = await Promise.all([
+                axios.get("/api/feedbacks/mine/received", config),
+                axios.get("/api/feedbacks/mine/sent", config)
+            ]);
+            setReceivedFeedbacks(receivedRes.data.feedbacks || []);
+            setSentFeedbacks(sentRes.data.feedbacks || []);
+        } catch (loadError) {
+            setError(loadError.response?.data?.error || loadError.response?.data?.message || "친구 정보를 불러오지 못했습니다.");
+        }
+    };
+    useEffect(() => {
+        loadData();
+    }, []);
 
     return (
-        <Container onClick={() => {setOpenPopup(null); setEditMode(null); setDeleteMode(null); setAddingTo(null); setEditingId(null);}}>
+        <>
             <GlobalStyle />
-            <Menu onClick={(e) => e.stopPropagation()}>
-                <Symbol className="symbol" src={symbol} />
-                <Logo className="logo" src={logo} />
-                <Item onClick={() => navigate("/homepage")}><Background $active={true} /><Icon src={in_home} /><Text className="text">HOME</Text></Item>
-                <Item onClick={() => navigate("/schedule")}><Background $active={false} /><Icon src={calendarIcon} /><Text className="text">SCHEDULE</Text></Item>
-                <Item onClick={() => navigate("/project")}><Background $active={false} /><Icon src={pen} /><Text className="text">PROJECT</Text></Item>
-                <Item onClick={() => navigate("/chat")}><Background $active={false} /><Icon src={chat} /><Text className="text">CHATTING</Text></Item>
-                <Item onClick={() => navigate("/mypage")}><Background $active={false} /><Icon src={icon} /><Text className="text">MY PAGE</Text></Item>
-                <Line />
-                {/* 에러 지점 해결: alarm 아이콘을 사용 */}
-                <Item onClick={() => navigate("/notification")}><Icon src={alarm} /><Text className="text">NOTIFICATIONS</Text></Item>
-            </Menu>
+            <PageLayout>
+                <Menu/>
+                <ContentBox>
+                    <MainContent>
+                        <LeftPanel>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <img src={profile} style={{ width: 80, height: 80, borderRadius: '50%' }} alt="p" />
+                                <div style={{ marginLeft: 15 }}>
+                                    <div style={{ fontSize: 22, fontWeight: 700 }}>{profileData?.name || profileData?.userid || "사용자"}</div>
+                                    <div style={{ color: '#999', fontSize: 14 }}>디자이너</div>
+                                </div>
+                            </div>
+                            <MiniCalendar currentViewDate={currentViewDate} setCurrentViewDate={setCurrentViewDate} />
+                            <div style={{ marginTop: '30px' }}>
+                                {[15, 18, 20].map(d => (
+                                    <Card key={d}><CardDate>{d}</CardDate><div style={{marginLeft:20}}><div style={{fontSize:14, fontWeight:600}}>프로젝트 업무</div><div style={{fontSize:12, color:'#AAA'}}>세부 내용</div></div></Card>
+                                ))}
+                            </div>
+                        </LeftPanel>
 
-            <MainContent>
-                <LeftPanel>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <img src={profile} style={{ width: 80, height: 80, borderRadius: '50%' }} alt="p" />
-                        <div style={{ marginLeft: 15 }}>
-                            <div style={{ fontSize: 22, fontWeight: 700 }}>이민지</div>
-                            <div style={{ color: '#999', fontSize: 14 }}>디자이너</div>
-                        </div>
-                    </div>
-                    <MiniCalendar currentViewDate={currentViewDate} setCurrentViewDate={setCurrentViewDate} />
-                    <div style={{ marginTop: '30px' }}>
-                        {[15, 18, 20].map(d => (
-                            <Card key={d}><CardDate>{d}</CardDate><div style={{marginLeft:20}}><div style={{fontSize:14, fontWeight:600}}>프로젝트 업무</div><div style={{fontSize:12, color:'#AAA'}}>세부 내용</div></div></Card>
-                        ))}
-                    </div>
-                </LeftPanel>
+                        <MiddlePanel>
+                            <h2 style={{ fontSize: 32, fontWeight: 800 }}>Today</h2>
+                            <p style={{ color: '#AAA', marginTop: 5 }}>{getWeekLabel(weekStartDate)}</p>
+                            <WeeklyNav>
+                                <img src={week_left} style={{ width: 42, height: 42, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setWeekStartDate(new Date(weekStartDate.setDate(weekStartDate.getDate() - 7))); }} alt="prev" />
+                                {weekDates.map((item, idx) => (
+                                    <DayItem key={idx}><DayNum $active={item.full === new Date().toDateString()}>{item.day}</DayNum><DayDot $has={item.event} /></DayItem>
+                                ))}
+                                <img src={week_right} style={{ width: 42, height: 42, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setWeekStartDate(new Date(weekStartDate.setDate(weekStartDate.getDate() + 7))); }} alt="next" />
+                            </WeeklyNav>
 
-                <MiddlePanel>
-                    <h2 style={{ fontSize: 32, fontWeight: 800 }}>Today</h2>
-                    <p style={{ color: '#AAA', marginTop: 5 }}>{getWeekLabel(weekStartDate)}</p>
-                    <WeeklyNav>
-                        <img src={week_left} style={{ width: 42, height: 42, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setWeekStartDate(new Date(weekStartDate.setDate(weekStartDate.getDate() - 7))); }} alt="prev" />
-                        {weekDates.map((item, idx) => (
-                            <DayItem key={idx}><DayNum $active={item.full === new Date().toDateString()}>{item.day}</DayNum><DayDot $has={item.event} /></DayItem>
-                        ))}
-                        <img src={week_right} style={{ width: 42, height: 42, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setWeekStartDate(new Date(weekStartDate.setDate(weekStartDate.getDate() + 7))); }} alt="next" />
-                    </WeeklyNav>
-
-                    {['project', 'todo'].map(section => (
-                        <div key={section} style={{marginTop: 40}}>
-                            <TaskHeader onClick={(e) => e.stopPropagation()}>
-                                <h3>{section.toUpperCase()}</h3>
-                                <button className="plus" onClick={() => setOpenPopup(openPopup === section ? null : section)}>+</button>
-                                {openPopup === section && (
-                                    <ActionPopup>
-                                        <ActionItem onClick={() => { setAddingTo(section); setOpenPopup(null); }}><img src={addIcon} alt="" />추가</ActionItem>
-                                        <ActionItem onClick={() => { setEditMode(section); setOpenPopup(null); }}><img src={editIcon} alt="" />수정</ActionItem>
-                                        <ActionItem onClick={() => { setDeleteMode(section); setOpenPopup(null); }}><img src={deleteIcon} alt="" />삭제</ActionItem>
-                                    </ActionPopup>
-                                )}
-                            </TaskHeader>
-                            {(section === 'project' ? projects : todos).map(item => (
-                                <TaskRow key={item.id} onClick={(e) => e.stopPropagation()}>
-                                    <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />
-                                    {editingId === item.id ? (
-                                        <EditInput autoFocus defaultValue={item.text} onKeyDown={(e) => e.key === 'Enter' && handleEditComplete(item.id, e.target.value, section)} onBlur={(e) => handleEditComplete(item.id, e.target.value, section)} />
-                                    ) : (
-                                        <span style={{ fontSize: 17, fontWeight: 500, cursor: editMode === section ? 'text' : 'default' }} onClick={() => handleTextClick(item.id, section)}>{item.text}</span>
+                            {['project', 'todo'].map(section => (
+                                <div key={section} style={{marginTop: 40}}>
+                                    <TaskHeader onClick={(e) => e.stopPropagation()}>
+                                        <h3>{section.toUpperCase()}</h3>
+                                        <button className="plus" onClick={() => setOpenPopup(openPopup === section ? null : section)}>+</button>
+                                        {openPopup === section && (
+                                            <ActionPopup>
+                                                <ActionItem onClick={() => { setAddingTo(section); setOpenPopup(null); }}><img src={addIcon} alt="" />추가</ActionItem>
+                                                <ActionItem onClick={() => { setEditMode(section); setOpenPopup(null); }}><img src={editIcon} alt="" />수정</ActionItem>
+                                                <ActionItem onClick={() => { setDeleteMode(section); setOpenPopup(null); }}><img src={deleteIcon} alt="" />삭제</ActionItem>
+                                            </ActionPopup>
+                                        )}
+                                    </TaskHeader>
+                                    {(section === 'project' ? projects : todos).map(item => (
+                                        <TaskRow key={item.id} onClick={(e) => e.stopPropagation()}>
+                                            <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />
+                                            {editingId === item.id ? (
+                                                <EditInput autoFocus defaultValue={item.text} onKeyDown={(e) => e.key === 'Enter' && handleEditComplete(item.id, e.target.value, section)} onBlur={(e) => handleEditComplete(item.id, e.target.value, section)} />
+                                            ) : (
+                                                <span style={{ fontSize: 17, fontWeight: 500, cursor: editMode === section ? 'text' : 'default' }} onClick={() => handleTextClick(item.id, section)}>{item.text}</span>
+                                            )}
+                                        </TaskRow>
+                                    ))}
+                                    {addingTo === section && (
+                                        <TaskRow onClick={(e) => e.stopPropagation()}>
+                                            <CustomCheckBox $checked={false} />
+                                            <EditInput autoFocus placeholder="내용을 입력하세요..." onKeyDown={(e) => handleAddItem(e, section)} />
+                                        </TaskRow>
                                     )}
-                                </TaskRow>
+                                </div>
                             ))}
-                            {addingTo === section && (
-                                <TaskRow onClick={(e) => e.stopPropagation()}>
-                                    <CustomCheckBox $checked={false} />
-                                    <EditInput autoFocus placeholder="내용을 입력하세요..." onKeyDown={(e) => handleAddItem(e, section)} />
-                                </TaskRow>
-                            )}
-                        </div>
-                    ))}
-                </MiddlePanel>
-            </MainContent>
-        </Container>
+                        </MiddlePanel>
+                    </MainContent>
+                </ContentBox>
+            </PageLayout>
+        </>
     );
 }
