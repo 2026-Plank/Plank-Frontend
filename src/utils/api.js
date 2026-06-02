@@ -83,35 +83,24 @@ export const mapApiTeam = (team) => {
   const members = Array.isArray(team?.members)
     ? team.members.map((member) => ({
         ...member,
-        userPk: member.userPk,
         name: member.name || member.id || "이름 없음",
         join_team: member.department ? [member.department] : [],
       }))
     : [];
 
   const departments = [...new Set(members.flatMap((member) => member.join_team).filter(Boolean))];
-  const groups = departments.length > 0 ? departments : [];
-  const teamExplan = groups.flatMap((group) => {
-    const contents = members
-      .filter((member) => member.join_team.includes(group))
-      .map((member) => member.jobDetail)
-      .filter(Boolean);
-
-    return contents.length > 0
-      ? contents.map((content) => ({ join_team: group, explan: content }))
-      : [{ join_team: group, explan: "업무 내용을 작성해 주세요." }];
-  });
+  const groups = departments.length > 0 ? departments : ["기획자", "개발자", "디자이너"];
 
   return {
     id: team?.id ?? null,
     title: team?.name || team?.title || "프로젝트 명",
     period: deadline ? `~ ${deadline}` : team?.period || "",
     code: team?.teamCode || team?.code || "",
-    charge: team?.dpLeader || team?.charge || "팀 프로젝트",
+    charge: team?.dpName || team?.charge || "팀 프로젝트",
     progress: team?.progress ?? 0,
     description: team?.description || team?.dpName || "프로젝트 설명",
     members,
-    team_explan: teamExplan,
+    team_explan: groups.map((group) => ({ join_team: group, explan: "업무 내용을 작성해 주세요." })),
     team_deadline: groups.map((group) => ({ join_team: group, deadline: deadline ? `~ ${deadline}` : "-" })),
     hidden: false,
     raw: team,

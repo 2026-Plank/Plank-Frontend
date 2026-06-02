@@ -175,8 +175,6 @@ export default function TeamSelectPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const teamId = location.state?.teamId || location.state?.team?.id;
-  const team = location.state?.team;
-  const nextPath = location.state?.nextPath;
   const [selectedRole, setSelectedRole] = useState(null);
   const [details, setDetails] = useState(Object.fromEntries(roles.map((role) => [role, ""])));
 
@@ -202,11 +200,6 @@ export default function TeamSelectPage() {
           jobDetail: details[selectedRole],
         }),
       });
-      localStorage.setItem("teamId", String(teamId));
-      if (nextPath) {
-        navigate(nextPath, { state: { team, teamId, from: location.state?.from } });
-        return;
-      }
       navigate("/project");
     } catch (error) {
       alert(error.message || "부서 선택 저장에 실패했습니다.");
