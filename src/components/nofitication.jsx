@@ -1,33 +1,15 @@
-//packages
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-//assets
-import symbol from '../assets/symbol.svg';
-import home from '../assets/home.svg';
-import in_home from '../assets/in_home.svg';
-import calendar from '../assets/calendar.svg';
-import in_calendar from '../assets/in_calendar.svg';
-import pen from '../assets/pen.svg';
-import in_pen from '../assets/in_pen.svg';
-import chat from '../assets/chat.svg';
-import in_chat from '../assets/in_chat.svg';
-import icon from '../assets/icon.svg';
-import in_icon from '../assets/in_icon.svg';
-import alarm from '../assets/alarm.svg';
-import setting from '../assets/setting.svg';
-import logo from '../assets/logo.svg';
-
-//components
 import { GlobalStyle } from "../pages/homePage";
 import Menu from "./menu";
 import { PageLayout, ContentBox } from "./schedule_page";
+import { apiRequest, getAuthToken } from "../utils/api";
 
-//css
 const HeaderBox = styled.div`
-    margin: 40px 0 20px 0; /* 불필요한 좌측 마진 10% 제거 -> ContentBox 기본 패딩에 맞춤 */
-    
+    margin: 40px 0 20px 0;
+
     @media (max-width: 480px) {
         margin: 20px 0 12px 0;
     }
@@ -36,9 +18,7 @@ const HeaderBox = styled.div`
 const HeaderText = styled.span`
     color: var(--black-1, #000);
     font-size: 26px;
-    font-style: normal;
     font-weight: 600;
-    line-height: normal;
 
     @media (max-width: 480px) {
         font-size: 20px;
@@ -49,19 +29,15 @@ const AlarmBox = styled.div`
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px; /* 마진 대신 gap으로 요소 간격 제어 */
+    gap: 12px;
     width: 100%;
 `;
 
 const NotificationText = styled.span`
     color: var(--Gray-6, #959794);
-    font-feature-settings: 'ss05' on;
-    font-family: Pretendard;
     font-size: 18px;
-    font-style: normal;
     font-weight: 600;
     line-height: 140%;
-    letter-spacing: 0.15px;
 
     @media (max-width: 480px) {
         font-size: 15px;
@@ -70,9 +46,9 @@ const NotificationText = styled.span`
 
 const AlarmWapper = styled.div`
     display: flex;
-    width: 100%; /* ★ 1200px 고정을 해제하여 모바일 튕김 현상 방지 */
+    width: 100%;
     max-width: 1200px;
-    min-height: 96px; /* 고정 height 대신 텍스트 양에 맞춰 유연하게 변하도록 min-height 지정 */
+    min-height: 96px;
     padding: 24px;
     justify-content: space-between;
     align-items: center;
@@ -86,11 +62,10 @@ const AlarmWapper = styled.div`
 
     &:hover,
     &:active {
-        border-radius: 16px;
         border: 1px solid var(--Light-Green-2, #C0DA58);
-        background: var(--white-1, #FFF);
         box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.30);
     }
+
     &:hover ${NotificationText},
     &:active ${NotificationText}{
         color: var(--Light-Green-3, #90A442);
@@ -107,19 +82,17 @@ const AlarmWapper = styled.div`
 const TextWapper = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 4px; /* 타이틀과 서브텍스트 사이 간격 고정 */
+    gap: 4px;
     flex: 1;
-    min-width: 0; /* 내부 긴 텍스트 말줄임이나 깨짐 방지용 */
+    min-width: 0;
 `;
 
 const MessageText = styled.span`
     color: var(--Gray-6, #959794);
-    font-family: Pretendard;
     font-size: 14px;
-    font-style: normal;
     font-weight: 500;
     line-height: 140%;
-    word-break: keep-all; /* 모바일에서 단어 단위로 예쁘게 줄바꿈 */
+    word-break: keep-all;
 
     @media (max-width: 480px) {
         font-size: 12px;
@@ -128,47 +101,82 @@ const MessageText = styled.span`
 
 const StateText = styled.span`
     color: var(--Gray-7, #70716F);
-    font-family: Pretendard;
     font-size: 13px;
-    font-style: normal;
     font-weight: 600;
     line-height: 140%;
-    white-space: nowrap; /* 읽음/안읽음 표시 글자 쪼개짐 방지 */
+    white-space: nowrap;
 
     @media (max-width: 480px) {
         font-size: 11px;
     }
 `;
 
-const messageState = [
-    {value: "안 읽음", state: "NOREAD"},
-    {value: "읽음", state: "READ"}
-];
+const EmptyText = styled.p`
+    color: #959794;
+    font-size: 15px;
+`;
+
+const getHeaderText = (type) => {
+    switch (type) {
+        case "project_deadline":
+            return "프로젝트 마감";
+        case "task_deadline":
+            return "업무 마감";
+        case "feedback":
+            return "피드백";
+        case "chat":
+            return "채팅";
+        default:
+            return "알림";
+    }
+};
+
+const getActionPath = (notification) => {
+    if (notification.actionPath) return notification.actionPath;
+    if (notification.type === "chat") return "/chat";
+    if (notification.targetType === "team") return "/project";
+    if (notification.targetType === "schedule") return "/schedule";
+    return "/notification";
+};
 
 export default function NotificationPage() {
     const navigate = useNavigate();
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    // message 더미데이터 로컬스토리지대신 db로 가능하게 변경
-    const [messages, setMessages] = useState(() => {
-        const saved = localStorage.getItem("notifications");
-        return saved ? JSON.parse(saved) : [
-          {headertext: "프로젝트 마감", message: "UI/UX 개선 프로젝트의 마감일이 3일 남았습니다.", state: "NOREAD", send: "project"},
-          {headertext: "피드백", message: "피드백이 추가되었습니다.", state: "NOREAD", send: "chat"},
-          {headertext: "채팅", message: "안녕하세요 반갑습니다.", state: "NOREAD", send: "chat"},
-          {headertext: "채팅", message: "채팅이 왔습니다.", state: "NOREAD", send: "chat"},
-        ];
-    });
-
-    // 알림 정보 저장되는 로직으로 변경
     useEffect(() => {
-        localStorage.setItem("notifications", JSON.stringify(messages));
-    }, [messages]);
+        const loadNotifications = async () => {
+            if (!getAuthToken()) {
+                setError("로그인이 필요합니다.");
+                return;
+            }
 
-    const handleRead = (index, send) => {
-        setMessages((prev) =>
-          prev.map((msg, i) => (i === index ? { ...msg, state: "READ" } : msg))
-        );
-        navigate(`/${send}`);
+            setLoading(true);
+            try {
+                const data = await apiRequest("/api/notifications");
+                setMessages(Array.isArray(data) ? data : data.notifications || []);
+                setError("");
+            } catch (err) {
+                setError(err.message || "알림을 불러오지 못했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadNotifications();
+    }, []);
+
+    const handleRead = async (notification) => {
+        if (!notification.isRead) {
+            setMessages((prev) => prev.map((msg) => msg.id === notification.id ? { ...msg, isRead: true } : msg));
+            try {
+                await apiRequest(`/api/notifications/${notification.id}/read`, { method: "PUT" });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        navigate(getActionPath(notification));
     };
 
     return (
@@ -181,13 +189,16 @@ export default function NotificationPage() {
                         <HeaderText>알림</HeaderText>
                     </HeaderBox>
                     <AlarmBox>
-                        {messages.map((message, index) => (
-                            <AlarmWapper key={index} onClick={() => handleRead(index, message.send)}>
+                        {loading && <EmptyText>알림을 불러오는 중입니다.</EmptyText>}
+                        {error && <EmptyText>{error}</EmptyText>}
+                        {!loading && !error && messages.length === 0 && <EmptyText>새 알림이 없습니다.</EmptyText>}
+                        {messages.map((message) => (
+                            <AlarmWapper key={message.id} onClick={() => handleRead(message)}>
                                 <TextWapper>
-                                    <NotificationText>{message.headertext}</NotificationText>
+                                    <NotificationText>{getHeaderText(message.type)}</NotificationText>
                                     <MessageText>{message.message}</MessageText>
                                 </TextWapper>
-                                <StateText>{messageState.find(item => item.state === message.state)?.value}</StateText>
+                                <StateText>{message.isRead ? "읽음" : "안 읽음"}</StateText>
                             </AlarmWapper>
                         ))}
                     </AlarmBox>
