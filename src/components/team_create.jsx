@@ -112,6 +112,8 @@ export const Label = styled.label`
     pointer-events: none;
 `;
 
+export const FloatingWrapper = styled(InputWrapper)``;
+
 export const Title = styled.span`
     margin: 40px;
     color: #959794;
