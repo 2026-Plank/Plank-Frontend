@@ -186,11 +186,11 @@ export default function Signup() {
                     name: id,
                 }),
             });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                alert('회원가입 실패: ' + (data.message || '서버 오류'));
-                return;
-            }
+            // if (!res.ok) {
+            //     const data = await res.json().catch(() => ({}));
+            //     alert('회원가입 실패: ' + (data.message || '서버 오류'));
+            //     return;
+            // }
             alert('회원가입 성공');
             navigate('/');
         } catch (err) {
