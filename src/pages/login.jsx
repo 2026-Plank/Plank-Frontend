@@ -187,7 +187,7 @@ export default function Login() {
                 body: JSON.stringify({ userid: loginId.trim(), password }),
             });
 
-            setAuthSession({ token: data.token, user: data.user });
+            setAuthSession({ token: res.token, user: res.user });
             navigate("/homepage");
         } catch (err) {
             alert("로그인 실패");
