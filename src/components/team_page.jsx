@@ -507,7 +507,7 @@ export default function TeamPage() {
                   <MenuBox ref={menuRef}>
                     <MenuWapper
                       type="button"
-                      onClick={() => navigate("/team-modify", { state: { team }, from: "project" })}
+                      onClick={() => navigate("/team-modify", { state: { team, from: "project", editMode: true } })}
                     >
                       <MenuIcon src={editIcon} alt="" />
                       <MenuText>수정</MenuText>

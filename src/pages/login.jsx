@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
-import { setAuthSession } from '../utils/api';
+import { apiRequest, setAuthSession } from '../utils/api';
 import logo from "../assets/logo.svg";
 
 export const GlobalStyle = createGlobalStyle`
@@ -189,7 +189,7 @@ export default function Login() {
         }
 
         try {
-            const res = await fetch("/api/auth/login", {
+            const res = await apiRequest("/api/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

@@ -124,6 +124,9 @@ export default function TeamJoin() {
         body: JSON.stringify({ inviteCode: teamCode.trim() }),
       });
       const team = mapApiTeam(data.team);
+      if (team.id) {
+        localStorage.setItem("teamId", String(team.id));
+      }
       navigate("/team-select", { state: { team, teamId: team.id, from: "join" } });
     } catch (error) {
       alert(error.message || "프로젝트 참가에 실패했습니다.");
