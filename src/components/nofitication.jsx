@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 
 import { GlobalStyle } from "../pages/homePage";
-import Menu from "./menu";
+import Menu from "./menu_layout";
 import { PageLayout, ContentBox } from "./schedule_page";
 import { apiRequest, getAuthToken } from "../utils/api";
 

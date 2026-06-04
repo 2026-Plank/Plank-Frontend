@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import Menu from "../components/menu";
+import Menu from "../components/menu_layout";
 import { PageLayout, ContentBox } from "../components/schedule_page";
 import { apiRequest, getAuthToken } from "../utils/api";
 

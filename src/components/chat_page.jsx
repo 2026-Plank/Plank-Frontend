@@ -11,7 +11,7 @@ import back_icon from "../assets/detail_back_icon.svg";
 
 import { GlobalStyle } from "../pages/homePage";
 import { PageLayout, ContentBox } from "./schedule_page";
-import Menu from "./menu";
+import Menu from "./menu_layout";
 import { apiRequest, getAuthToken } from "../utils/api";
 
 export const Layout = styled.div`

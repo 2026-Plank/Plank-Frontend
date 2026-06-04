@@ -19,7 +19,6 @@ import logo from "../assets/logo.svg";
 
 //styled-components
 const MenuBox = styled.div`
-    border: 10px solid red !important;
     height: 100vh; width: 130px; background-color: #F9F9F8; transition: 0.3s ease-in-out;
     display: flex; flex-direction: column; align-items: center; position: fixed; z-index: 10;
     &:hover { width: 300px; }
@@ -105,9 +104,7 @@ const TabText = styled.span`
     white-space: nowrap;
 `;
 
-export default function Menu() {
-    console.log("MENU TEST 999");
-    console.log("Menu Render");
+export default function MenuLayout() {
     const navigate = useNavigate();
     const location = useLocation(); // ★ 선언문 추가
 

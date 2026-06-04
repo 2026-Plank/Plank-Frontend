@@ -21,7 +21,7 @@ import in_chat from "../assets/in_chat.svg";
 import icon from "../assets/icon.svg";
 import in_icon from "../assets/in_icon.svg";
 //components
-import Menu from "./menu";
+import Menu from "./menu_layout";
 
 import { GlobalStyle } from "../pages/homePage";
 import { PageLayout, ContentBox } from "./schedule_page";

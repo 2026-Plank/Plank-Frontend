@@ -7,7 +7,7 @@ import { apiRequest } from "../utils/api";
 import profile from '../assets/profile.svg';
 
 // --- 컴포넌트 임포트 ---
-import Menu from "./menu"; // ★ 반응형 처리가 완료된 공통 Menu 컴포넌트 임포트
+import Menu from "./menu_layout"; // ★ 반응형 처리가 완료된 공통 Menu 컴포넌트 임포트
 
 /* --- Global Styles --- */
 export const GlobalStyle = createGlobalStyle`
