@@ -187,13 +187,6 @@ export default function Login() {
                 body: JSON.stringify({ userid: loginId.trim(), password }),
             });
 
-            // if (!res.ok) {
-            //     const data = await res.json().catch(() => ({}));
-            //     alert(`로그인 실패: ${data.message || data.error || "서버 오류"}`);
-            //     return;
-            // }
-
-            const data = await res.json();
             setAuthSession({ token: data.token, user: data.user });
             navigate("/homepage");
         } catch (err) {
