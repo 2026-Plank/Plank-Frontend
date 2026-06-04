@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"; // ★ useLocation 임포트 추가
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 
 //assets
