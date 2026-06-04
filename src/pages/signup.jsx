@@ -2,6 +2,7 @@ import logo from '../assets/logo.svg';
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { apiRequest } from '../utils/api';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -175,7 +176,7 @@ export default function Signup() {
         }
 
         try {
-            const res = await fetch('/api/auth/signup', {
+            const res = await apiRequest('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
