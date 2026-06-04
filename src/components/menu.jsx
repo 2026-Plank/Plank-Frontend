@@ -106,6 +106,7 @@ const TabText = styled.span`
 `;
 
 export default function Menu() {
+    console.log("MENU TEST 999");
     console.log("Menu Render");
     const navigate = useNavigate();
     const location = useLocation(); // ★ 선언문 추가
