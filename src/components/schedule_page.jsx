@@ -3,79 +3,121 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import previous_arrow from "../assets/arrow_previous.svg";
-import symbol from "../assets/symbol.svg";
-import home from "../assets/home.svg";
-import in_home from "../assets/in_home.svg";
-import calendar from "../assets/calendar.svg";
-import in_calendar from "../assets/in_calendar.svg";
-import pen from "../assets/pen.svg";
-import in_pen from "../assets/in_pen.svg";
-import chat from "../assets/chat.svg";
-import in_chat from "../assets/in_chat.svg";
-import icon from "../assets/icon.svg";
-import in_icon from "../assets/in_icon.svg";
-import alarm from "../assets/alarm.svg";
-import logo from "../assets/logo.svg";
 
 import { GlobalStyle } from "../pages/homePage";
-import { Menu } from "../pages/homePage";
-import { Symbol } from "../pages/homePage";
-import { Logo } from "../pages/homePage";
-import { Item } from "../pages/homePage";
-import { Background } from "../pages/homePage";
-import { Icon } from "../pages/homePage";
-import { Text } from "../pages/homePage";
-import { Line } from "../pages/homePage";
+import Menu from "./menu";
 import { apiRequest } from "../utils/api";
 
 export const PageLayout = styled.div`
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
+    background-color: #f9f9f9; /* 배경색이 잘 구별되도록 추가 */
 `;
 
 export const ContentBox = styled.div`
     display: flex;
     flex-direction: column;
     flex: 1;
+    height: 100vh;
     overflow-y: auto;
     margin-left: 130px;
+
     &::-webkit-scrollbar {
         display: none;
     }
     -ms-overflow-style: none;
     scrollbar-width: none;
+
+    @media (max-width: 480px) {
+        margin-left: 0;
+        padding: 16px;
+        /* ★ 핵심: 모바일에서는 고정 높이를 해제하여 상단 Box가 밀리지 않고 전체 스크롤이 되도록 함 */
+        height: auto;
+        min-height: 100vh;
+        overflow-y: visible;
+        padding-bottom: 100px; /* 하단 네비게이션 바 여유 공간 */
+    }
 `;
 
 const TopBox = styled.div`
+    margin-left: 2%;
+    margin-top: 24px;
     display: flex;
-    gap: 16px;
-    padding: 32px 24px 0;
     overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 12px;
+    flex-shrink: 0; /* 자기 자신이 찌그러지지 않도록 설정 */
 
     &::-webkit-scrollbar {
         display: none;
     }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    @media (max-width: 480px) {
+        margin-left: 0;
+        margin-top: 8px;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
 `;
 
-const SummaryCard = styled.div`
-    min-width: 220px;
-    padding: 20px 24px;
-    border-radius: 18px;
-    border: 1px solid #c9c9c8;
-    background: #fff;
+const TopScheduleBox = styled.div`
+    display: flex;
+    padding: 16px 32px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    border-radius: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;   
+
+    border: 1px solid var(--Gray-5, #C9C9C8);
+    background: #FFF;
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
+    &:hover{
+        border: 1px solid var(--Light-Green-2, #C0DA58);
+        background: #FFF;
+        box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.30);
+    }
+
+    @media (max-width: 480px) {
+        padding: 12px 20px;
+    }
 `;
 
-const SummaryTitle = styled.div`
-    color: #70716f;
+const TopScheduleText = styled.span`
+    color: var(--Gray-7, #70716F);
+    font-family: Pretendard;
     font-size: 22px;
+    font-style: normal;
     font-weight: 600;
+    line-height: normal;
+    cursor: default;
+
+    ${TopScheduleBox}:hover & {
+        color: var(--Light-Green-3, #90A442);
+        cursor: default;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 18px;
+    }
 `;
 
-const SummaryCount = styled.div`
-    margin-top: 8px;
-    color: #90a442;
+const TopTaskText = styled.span`
+    color: var(--Gray-6, #959794);
+    font-family: Pretendard;
     font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    cursor: default;
+
+    @media (max-width: 480px) {
+        font-size: 14px;
+    }
 `;
 
 const MainBox = styled.div`
@@ -83,9 +125,15 @@ const MainBox = styled.div`
     grid-template-columns: minmax(320px, 460px) minmax(360px, 1fr);
     gap: 28px;
     padding: 24px;
+    flex: 1; /* 남은 공간을 자연스럽게 채우도록 변경 */
 
     @media (max-width: 1100px) {
         grid-template-columns: 1fr;
+    }
+
+    @media (max-width: 480px) {
+        padding: 12px 0px;
+        gap: 20px;
     }
 `;
 
@@ -94,6 +142,10 @@ const Panel = styled.section`
     border-radius: 20px;
     background: #fff;
     padding: 24px;
+
+    @media (max-width: 480px) {
+        padding: 16px;
+    }
 `;
 
 const SectionTitle = styled.h2`
@@ -101,12 +153,20 @@ const SectionTitle = styled.h2`
     color: #575856;
     font-size: 24px;
     font-weight: 700;
+
+    @media (max-width: 480px) {
+        font-size: 20px;
+    }
 `;
 
 const SectionSub = styled.p`
     margin: 8px 0 0;
     color: #959794;
     font-size: 15px;
+
+    @media (max-width: 480px) {
+        font-size: 13px;
+    }
 `;
 
 const CalendarHeader = styled.div`
@@ -135,13 +195,18 @@ const MonthText = styled.div`
     color: #90a442;
     font-size: 24px;
     font-weight: 700;
+
+    @media (max-width: 480px) {
+        font-size: 20px;
+    }
 `;
 
 const WeekGrid = styled.div`
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-top: 18px;
+    gap: 6px;
+    margin-top: 16px;
 `;
 
 const WeekCell = styled.div`
@@ -152,43 +217,59 @@ const WeekCell = styled.div`
 `;
 
 const DateGrid = styled.div`
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 10px;
 `;
 
-const DateCell = styled.button`
-    min-height: 58px;
-    border-radius: 16px;
-    border: ${({ $selected, $isToday }) => {
-        if ($selected) return "2px solid #90a442";
-        if ($isToday) return "2px solid #d7e697";
-        return "1px solid #ececea";
+const DateCell = styled.div`
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    text-align: center;
+    font-family: Pretendard;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    border-radius: ${({ $isToday }) => ($isToday ? "50%" : "10%")};
+    cursor: pointer;
+    background: ${({ $count }) => {
+        if ($count === 1) return "var(--Light-Green-4, #D7E697)";
+        if ($count >= 2 && $count <= 4) return "var(--Light-Green-2, #C0DA58)";
+        if ($count >= 5) return "var(--Light-Green-3, #90A442)";
+        return "transparent";
     }};
-    background: ${({ $count, $selected }) => {
-        if ($selected) return "#eef5d3";
-        if ($count >= 3) return "#90a442";
-        if ($count >= 1) return "#d7e697";
-        return "#fff";
+    border: ${({ $isToday }) => $isToday ? "2px solid var(--Light-Green-4, #D7E697)" : "none"};
+    color: ${({ $isCurrent, $count }) => {
+        if ($count > 0) return "var(--white-1, #FFF)";
+        return $isCurrent 
+            ? "var(--Gray-7, #70716F)" 
+            : "var(--Gray-5, #C9C9C8)";
     }};
-    color: ${({ $count, $isCurrent }) => {
-        if ($count >= 3) return "#fff";
-        if ($count >= 1) return "#575856";
-        return $isCurrent ? "#70716f" : "#c9c9c8";
-    }};
-    cursor: ${({ $isCurrent }) => ($isCurrent ? "pointer" : "default")};
-    padding: 8px 4px;
 `;
 
 const DateNumber = styled.div`
     font-size: 16px;
     font-weight: 700;
+
+    @media (max-width: 480px) {
+        font-size: 14px;
+    }
 `;
 
 const DateCount = styled.div`
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: 11px;
+
+    @media (max-width: 480px) {
+        font-size: 9px;
+    }
 `;
 
 const FormGrid = styled.div`
@@ -217,6 +298,8 @@ const Input = styled.input`
     padding: 14px 16px;
     font-size: 15px;
     outline: none;
+    width: 100%;
+    box-sizing: border-box;
 
     &:focus {
         border-color: #90a442;
@@ -230,6 +313,8 @@ const Select = styled.select`
     font-size: 15px;
     outline: none;
     background: #fff;
+    width: 100%;
+    box-sizing: border-box;
 
     &:focus {
         border-color: #90a442;
@@ -244,6 +329,8 @@ const TextArea = styled.textarea`
     min-height: 110px;
     resize: vertical;
     outline: none;
+    width: 100%;
+    box-sizing: border-box;
 
     &:focus {
         border-color: #90a442;
@@ -258,6 +345,7 @@ const ActionRow = styled.div`
     display: flex;
     gap: 10px;
     margin-top: 16px;
+    flex-wrap: wrap;
 `;
 
 const PrimaryButton = styled.button`
@@ -269,6 +357,8 @@ const PrimaryButton = styled.button`
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
+    flex: 1;
+    min-width: 90px;
 `;
 
 const SecondaryButton = styled.button`
@@ -280,6 +370,8 @@ const SecondaryButton = styled.button`
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
+    flex: 1;
+    min-width: 75px;
 `;
 
 const MetaRow = styled.div`
@@ -308,6 +400,10 @@ const TaskCard = styled.div`
     border-radius: 18px;
     padding: 18px 20px;
     background: #fff;
+
+    @media (max-width: 480px) {
+        padding: 14px;
+    }
 `;
 
 const TaskTop = styled.div`
@@ -328,6 +424,10 @@ const TaskTitle = styled.div`
     color: #575856;
     font-size: 18px;
     font-weight: 700;
+
+    @media (max-width: 480px) {
+        font-size: 16px;
+    }
 `;
 
 const TaskDesc = styled.div`
@@ -429,35 +529,17 @@ export default function SchedulePage() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    const [teamId, setTeamId] = useState(() => localStorage.getItem("teamId") || "");
+    const teamId = localStorage.getItem("teamId") || "";
 
-    const menus = [
-        { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
-        { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-        { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-        { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-        { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
-    ];
-
-    const clearStoredTeamId = () => {
-        localStorage.removeItem("teamId");
-        setTeamId("");
-    };
-
-    const isMissingTeamError = (requestError) => {
-        const errorText = requestError.data?.error || requestError.message || "";
-        return /ORA-02291|FK_TASK_TEAM|teamId/i.test(errorText);
-    };
-
-    const loadSchedules = async (targetTeamId = teamId) => {
+    const loadSchedules = async () => {
         setLoading(true);
         setError("");
         try {
-            const url = targetTeamId ? `/api/schedules/${targetTeamId}` : "/api/schedules";
+            const url = teamId ? `/api/schedules/${teamId}` : "/api/schedules";
             const data = await apiRequest(url);
             setSchedules(data.schedules || []);
         } catch (loadError) {
-            setError(loadError.message || "일정을 불러오지 못했습니다.");
+            setError(loadError.response?.data?.error || "일정을 불러오지 못했습니다.");
         } finally {
             setLoading(false);
         }
@@ -465,10 +547,10 @@ export default function SchedulePage() {
 
     useEffect(() => {
         loadSchedules();
-    }, [teamId]);
+    }, []);
 
     const scheduleCounts = useMemo(() => {
-        const counts = { "모든 일정": schedules.length };
+        const counts = { "모든 프로젝트": schedules.length };
         schedules.forEach((item) => {
             const key = item.dpName || "기본 프로젝트";
             counts[key] = (counts[key] || 0) + 1;
@@ -563,34 +645,17 @@ export default function SchedulePage() {
                 });
                 setMessage("일정을 수정했어요.");
             } else {
-                try {
-                    const data = await apiRequest("/api/schedules", {
-                        method: "POST",
-                        body: JSON.stringify(payload),
-                    });
-                    if (teamId && !data?.schedule?.teamId) {
-                        clearStoredTeamId();
-                    }
-                } catch (postError) {
-                    if (!teamId || !isMissingTeamError(postError)) {
-                        throw postError;
-                    }
-
-                    clearStoredTeamId();
-                    const retryPayload = { ...payload };
-                    delete retryPayload.teamId;
-                    await apiRequest("/api/schedules", {
-                        method: "POST",
-                        body: JSON.stringify(retryPayload),
-                    });
-                }
+                await apiRequest("/api/schedules", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
                 setMessage("일정을 추가했어요.");
             }
-            await loadSchedules(localStorage.getItem("teamId") || "");
+            await loadSchedules();
             setSelectedDate(form.targetDate);
             resetForm();
         } catch (submitError) {
-            setError(submitError.message || "일정 저장에 실패했습니다.");
+            setError(submitError.response?.data?.error || "일정 저장에 실패했습니다.");
         }
     };
 
@@ -616,44 +681,23 @@ export default function SchedulePage() {
             }
             await loadSchedules();
         } catch (deleteError) {
-            setError(deleteError.message || "일정 삭제에 실패했습니다.");
+            setError(deleteError.response?.data?.error || "일정 삭제에 실패했습니다.");
         }
     };
-
-    const isAlarmActive = location.pathname === "/notification";
 
     return (
         <>
             <GlobalStyle />
             <PageLayout>
-                <Menu>
-                    <Symbol className="symbol" src={symbol} />
-                    <Logo className="logo" src={logo} />
-                    {menus.map((menu) => {
-                        const isActive = location.pathname === menu.path;
-                        return (
-                            <Item key={menu.path} onClick={() => navigate(menu.path)}>
-                                <Background $active={isActive} />
-                                <Icon src={isActive ? menu.activeIcon : menu.icon} />
-                                <Text className="text">{menu.label}</Text>
-                            </Item>
-                        );
-                    })}
-                    <Line />
-                    <Item onClick={() => navigate("/notification")}>
-                        <Background $active={isAlarmActive} />
-                        <Icon src={alarm} />
-                        <Text className="text">NOTIFICATIONS</Text>
-                    </Item>
-                </Menu>
-
+                <Menu />
                 <ContentBox>
+                    {/* 상단 프로젝트 요약 박스 (모바일 가로 스크롤 가능) */}
                     <TopBox>
                         {scheduleCounts.map((data) => (
-                            <SummaryCard key={data.schedule}>
-                                <SummaryTitle>{data.schedule}</SummaryTitle>
-                                <SummaryCount>{data.tasks} tasks</SummaryCount>
-                            </SummaryCard>
+                            <TopScheduleBox key={data.schedule}>
+                                <TopScheduleText>{data.schedule}</TopScheduleText>
+                                <TopTaskText>{data.tasks} tasks</TopTaskText>
+                            </TopScheduleBox>
                         ))}
                     </TopBox>
 

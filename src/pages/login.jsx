@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import { Link, useNavigate } from 'react-router-dom';
-import { apiRequest, setAuthSession } from '../utils/api';
+import { Link, useNavigate } from "react-router-dom";
+import { setAuthSession } from "../utils/api";
 import logo from "../assets/logo.svg";
 
 export const GlobalStyle = createGlobalStyle`
@@ -21,9 +21,9 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     width: 100%;
-    padding: 0 20px; /* ★ 모바일 화면에서 양옆에 최소한의 여백 확보 */
+    padding: 0 20px;
     box-sizing: border-box;
-`
+`;
 
 const Logo = styled.img`
     width: 324px;
@@ -32,17 +32,17 @@ const Logo = styled.img`
     margin-bottom: 50px;
 
     @media (max-width: 480px) {
-        width: 200px;  /* 모바일 로고 크기 축소 */
+        width: 200px;
         height: auto;
         margin-top: 40px;
         margin-bottom: 60px;
     }
-`
+`;
 
 const InputWrapper = styled.div`
     position: relative;
-    width: 100%; /* ★ 고정 너비 해제 */
-    max-width: 538px; /* 데스크톱 최대 크기 제한 */
+    width: 100%;
+    max-width: 538px;
     margin-top: 30px;
     border-radius: 16px;
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
@@ -57,7 +57,7 @@ const InputWrapper = styled.div`
         margin-top: 16px;
         border-radius: 12px;
     }
-`
+`;
 
 const Input = styled.input`
     width: 100%;
@@ -70,12 +70,12 @@ const Input = styled.input`
     background: transparent;
 
     @media (max-width: 480px) {
-        height: 60px; /* ★ 모바일 맞춤 슬림 높이 */
+        height: 60px;
         font-size: 16px;
         padding: 16px;
         border-radius: 12px;
     }
-`
+`;
 
 const Label = styled.label`
     position: absolute;
@@ -91,7 +91,7 @@ const Label = styled.label`
         left: 16px;
         font-size: 14px;
     }
-`
+`;
 
 const FloatingWrapper = styled(InputWrapper)`
     input:focus + label,
@@ -102,44 +102,44 @@ const FloatingWrapper = styled(InputWrapper)`
 
     @media (max-width: 480px) {
         margin: 15px 0px;
-        /* ★ 모바일 높이(60px)에 맞춰 글자가 위로 뜰 때의 정렬 위치 최적화 */
+
         input:focus + label,
         input:not(:placeholder-shown) + label {
             top: 8px;
             font-size: 10px;
         }
     }
-`
+`;
 
 const LoginButton = styled.button`
-    width: 100%; /* ★ 고정 너비 해제 */
+    width: 100%;
     max-width: 538px;
     height: 90px;
     border-radius: 16px;
     margin-top: 30px;
     font-size: 28px;
     color: white;
-    background-color: ${({ disabled }) => disabled ? '#ccc' : '#C0DA58'};
+    background-color: ${({ disabled }) => disabled ? "#ccc" : "#C0DA58"};
     border: none;
-    cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+    cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: background-color 0.2s;
 
     @media (max-width: 480px) {
-        height: 56px; /* ★ 모바일 맞춤 버튼 크기 */
+        height: 56px;
         font-size: 18px;
         border-radius: 12px;
         margin-top: 36px;
     }
-`
+`;
 
 const LinkGroup = styled.div`
     display: flex;
     gap: 12px;
     margin-top: 20px;
     justify-content: center;
-    flex-wrap: wrap; /* 오버플로우 방지 균등 줄바꿈 허용 */
-`
+    flex-wrap: wrap;
+`;
 
 const SubLink = styled(Link)`
     text-decoration: none;
@@ -151,34 +151,26 @@ const SubLink = styled(Link)`
     }
 
     @media (max-width: 480px) {
-        font-size: 13px; /* 모바일 하단 링크 글씨 조정 */
+        font-size: 13px;
     }
-`
+`;
 
 const Divider = styled.span`
     color: #ccc;
     @media (max-width: 480px) {
         font-size: 13px;
     }
-`
+`;
 
 export default function Login() {
     const navigate = useNavigate();
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [loginId, setLoginId] = useState("");
+    const [password, setPassword] = useState("");
 
     const validate = () => {
-        if (!email || !password) {
-            return '이메일과 비밀번호를 입력해주세요';
-        }
-        if (!email.includes('@')) {
-            return '이메일 형식이 올바르지 않습니다';
-        }
-        if (password.length < 4) {
-            return '비밀번호는 4자 이상 입력해주세요';
-        }
-        return '';
+        if (!loginId.trim() || !password) return "아이디와 비밀번호를 입력해 주세요.";
+        if (password.length < 4) return "비밀번호는 4자 이상 입력해 주세요.";
+        return "";
     };
 
     const handleLogin = async () => {
@@ -191,27 +183,26 @@ export default function Login() {
         try {
             const res = await apiRequest("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ email, password }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userid: loginId.trim(), password }),
             });
+
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                alert('로그인 실패: ' + (data.message || '서버 오류'));
+                alert(`로그인 실패: ${data.message || data.error || "서버 오류"}`);
                 return;
             }
+
             const data = await res.json();
             setAuthSession({ token: data.token, user: data.user });
-            alert('로그인 성공');
-            navigate('/homepage');
+            navigate("/homepage");
         } catch (err) {
             alert("로그인 실패");
             console.error(err);
         }
     };
 
-    const isDisabled = !email || !password;
+    const isDisabled = !loginId.trim() || !password;
 
     return (
         <>
@@ -221,16 +212,18 @@ export default function Login() {
 
                 <FloatingWrapper>
                     <Input
-                        type="email"
+                        type="text"
+                        autoComplete="username"
                         placeholder=" "
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={loginId}
+                        onChange={(e) => setLoginId(e.target.value)}
                     />
-                    <Label>이메일</Label>
+                    <Label>아이디</Label>
                 </FloatingWrapper>
                 <FloatingWrapper>
                     <Input
                         type="password"
+                        autoComplete="current-password"
                         placeholder=" "
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

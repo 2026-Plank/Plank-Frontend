@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../utils/api";
 
 // --- 이미지 임포트 ---
 import profile from '../assets/profile.svg';
@@ -122,15 +123,13 @@ const SaveButton = styled.button`
     }
 `;
 
-export default function mypage_user() {
+export default function MypageUser() {
     const navigate = useNavigate();
-    const location = useLocation();
     const [name, setName] = useState("");
     const [job, setJob] = useState("");
     const [statusMsg, setStatusMsg] = useState("");
 
     const handleSave = async () => {
-        const token = localStorage.getItem("token");
         const body = {};
 
         if (name.trim() !== "") body.name = name;
@@ -138,16 +137,10 @@ export default function mypage_user() {
         if (statusMsg.trim() !== "") body.status = statusMsg;
 
         try {
-            const res = await fetch("http://localhost:3000/api/users/profile", {
+            const data = await apiRequest("/api/users/profile", {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
                 body: JSON.stringify(body)
             });
-
-            const data = await res.json();
             console.log("응답:", data);
 
             const prevUser = JSON.parse(localStorage.getItem("user")) || {};

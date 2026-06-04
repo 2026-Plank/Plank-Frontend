@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import searchIcon from "../assets/search_icon.png";
 import menuIcon from "../assets/menu.svg";
@@ -18,14 +18,11 @@ const HeaderBar = styled.header`
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-
   width: 100%;
   padding: 16px;
-
   position: sticky;
   top: 0;
   z-index: 5;
-
   background: #f9f9f8;
 
   @media (max-width: 480px) {
@@ -79,20 +76,15 @@ const SearchIconImg = styled.img`
 
 const JoinButton = styled.button`
   flex-shrink: 0;
-
   width: 120px;
   height: 52px;
-
   border-radius: 100px;
   border: 1px solid #c0da58;
-
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-
   color: #111;
   font-size: 16px;
   font-weight: 500;
-
   cursor: pointer;
 
   @media (max-width: 480px) {
@@ -111,7 +103,7 @@ const TeamBox = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   }
- 
+
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
     padding: 12px 16px;
@@ -127,7 +119,7 @@ const TeamBarContainer = styled.article`
   min-height: 350px;
   padding: 26px 32px 30px;
   justify-content: center;
-  gap: 5px;
+  gap: 12px;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
@@ -140,7 +132,6 @@ const TeamBarContainer = styled.article`
   @media (max-width: 480px) {
     min-height: unset;
     padding: 20px 20px 24px;
-    gap: 5px;
   }
 `;
 
@@ -149,20 +140,6 @@ const EllipsisIcon = styled.img`
   height: 24px;
   margin-left: auto;
   cursor: pointer;
-`;
-
-const TextBox = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 394px));
-  gap: 20px;
-  padding: 20px;
-  padding-bottom: 140px;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    padding: 12px 16px 140px;
-    gap: 14px;
-  }
 `;
 
 const TeamBarTitle = styled.h2`
@@ -231,24 +208,17 @@ const DetailText = styled.button`
 
 const CreateButton = styled.button`
   position: fixed;
-
   right: 16px;
   bottom: 80px;
-
   width: 56px;
   height: 56px;
-
   border-radius: 50%;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   border: 1px solid #c0da58;
   background: #fff;
-
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-
   cursor: pointer;
   z-index: 11;
 
@@ -315,17 +285,13 @@ const CardTop = styled.div`
 
 const HideWapper = styled.button`
   position: fixed;
-
   left: 16px;
   bottom: 80px;
-
   display: flex;
   align-items: center;
   gap: 6px;
-
   border: 0;
   background: transparent;
-
   cursor: pointer;
   z-index: 11;
 
@@ -350,71 +316,20 @@ const HideIcon = styled.img`
   height: 24px;
 `;
 
-const initialTeams = [
-  {
-    id: 1,
-    title: "올리브영 리디자인 프로젝트",
-    period: "03/01 - 06/01",
-    code: "x82olew",
-    charge: "UI 디자인",
-    progress: 65,
-    description: "프로젝트 설명",
-    members: [
-      { name: "이민지", join_team: ["디자이너"] },
-      { name: "박미주", join_team: ["디자이너"] },
-      { name: "윤다경", join_team: ["기획자", "개발자"] },
-      { name: "박재영", join_team: ["기획자"] },
-      { name: "장시후", join_team: ["개발자"] },
-      { name: "윤건", join_team: ["기획자", "개발자"] },
-    ],
-    team_explan: [
-      { join_team: "기획자", explan: "아이디어 제작" },
-      { join_team: "기획자", explan: "구체적인 페이지 또는 기능 설명" },
-      { join_team: "개발자", explan: "디자인 피드백" },
-      { join_team: "개발자", explan: "프로토타입 개발" },
-      { join_team: "디자이너", explan: "페르소나 제작" },
-      { join_team: "디자이너", explan: "프로토타입 제작" },
-    ],
-    team_deadline: [
-      { join_team: "기획자", deadline: "03/01 - 04/01" },
-      { join_team: "개발자", deadline: "05/01 - 06/01" },
-      { join_team: "디자이너", deadline: "04/01 - 05/01" },
-    ],
-    hidden: false,
-  },
-  {
-    id: 2,
-    title: "서비스 개선 프로젝트",
-    period: "04/01 - 07/01",
-    code: "svc407",
-    charge: "백엔드 개발",
-    progress: 30,
-    description: "서비스 흐름과 API 구조를 개선하는 프로젝트입니다.",
-    members: [
-      { name: "김하준", join_team: ["개발자"] },
-      { name: "최서연", join_team: ["기획자"] },
-    ],
-    team_explan: [
-      { join_team: "기획자", explan: "요구사항 정리" },
-      { join_team: "개발자", explan: "API 개선" },
-    ],
-    team_deadline: [
-      { join_team: "기획자", deadline: "04/01 - 04/20" },
-      { join_team: "개발자", deadline: "04/21 - 07/01" },
-    ],
-    hidden: false,
-  },
-];
+const EmptyText = styled.p`
+  padding: 20px;
+  color: #70716f;
+`;
 
 export default function TeamPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [teams, setTeams] = useState(initialTeams);
+  const [teams, setTeams] = useState([]);
   const [showHidden, setShowHidden] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [search, setSearch] = useState("");
   const menuRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const hiddenCount = teams.filter((team) => team.hidden).length;
   const visibleTeams = teams
@@ -423,26 +338,26 @@ export default function TeamPage() {
 
   useEffect(() => {
     const handleClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuId(null);
-      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   useEffect(() => {
-    if (!getAuthToken()) return;
+    if (!getAuthToken()) {
+      setError("로그인이 필요합니다.");
+      return;
+    }
 
     const loadTeams = async () => {
       setIsLoading(true);
       try {
         const data = await apiRequest("/api/teams");
-        if (Array.isArray(data?.teams)) {
-          setTeams(data.teams.map(mapApiTeam));
-        }
-      } catch (error) {
-        console.error("프로젝트 목록을 불러오지 못했습니다.", error);
+        setTeams(Array.isArray(data?.teams) ? data.teams.map(mapApiTeam) : []);
+        setError("");
+      } catch (err) {
+        setError(err.message || "프로젝트 목록을 불러오지 못했습니다.");
       } finally {
         setIsLoading(false);
       }
@@ -458,12 +373,10 @@ export default function TeamPage() {
 
   const handleDelete = async (id) => {
     try {
-      if (getAuthToken() && id) {
-        await apiRequest(`/api/teams/${id}`, { method: "DELETE" });
-      }
+      await apiRequest(`/api/teams/${id}`, { method: "DELETE" });
       setTeams((prev) => prev.filter((team) => team.id !== id));
-    } catch (error) {
-      alert(error.message || "프로젝트 삭제에 실패했습니다.");
+    } catch (err) {
+      alert(err.message || "프로젝트 삭제에 실패했습니다.");
     }
     setOpenMenuId(null);
   };
@@ -491,8 +404,11 @@ export default function TeamPage() {
             </JoinButton>
           </HeaderBar>
 
+          {isLoading && <EmptyText>프로젝트를 불러오는 중입니다.</EmptyText>}
+          {error && <EmptyText>{error}</EmptyText>}
+          {!isLoading && !error && visibleTeams.length === 0 && <EmptyText>표시할 프로젝트가 없습니다.</EmptyText>}
+
           <TeamBox>
-            {isLoading && <TeamBarTitle>프로젝트를 불러오는 중입니다.</TeamBarTitle>}
             {visibleTeams.map((team) => (
               <TeamBarContainer key={team.id}>
                 <CardTop>
@@ -505,10 +421,7 @@ export default function TeamPage() {
 
                 {openMenuId === team.id && (
                   <MenuBox ref={menuRef}>
-                    <MenuWapper
-                      type="button"
-                      onClick={() => navigate("/team-modify", { state: { team, from: "project", editMode: true } })}
-                    >
+                    <MenuWapper type="button" onClick={() => navigate("/team-modify", { state: { team }, from: "project" })}>
                       <MenuIcon src={editIcon} alt="" />
                       <MenuText>수정</MenuText>
                     </MenuWapper>
@@ -525,17 +438,15 @@ export default function TeamPage() {
                   </MenuBox>
                 )}
 
-                <TextBox>
-                  <TeamBarTitle>{team.title}</TeamBarTitle>
-                  <DetailBox>
-                    <LabelText>기간</LabelText>
-                    <TeamDetailText>{team.period}</TeamDetailText>
-                  </DetailBox>
-                  <DetailBox>
-                    <LabelText>담당</LabelText>
-                    <TeamDetailText>{team.charge}</TeamDetailText>
-                  </DetailBox>
-                </TextBox>
+                <TeamBarTitle>{team.title}</TeamBarTitle>
+                <DetailBox>
+                  <LabelText>기간</LabelText>
+                  <TeamDetailText>{team.period || "-"}</TeamDetailText>
+                </DetailBox>
+                <DetailBox>
+                  <LabelText>담당</LabelText>
+                  <TeamDetailText>{team.charge || "-"}</TeamDetailText>
+                </DetailBox>
 
                 <ProgressText>{team.progress}%</ProgressText>
                 <ProgressBar>
