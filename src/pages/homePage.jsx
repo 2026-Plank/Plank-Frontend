@@ -14,7 +14,6 @@ import editIcon from "../assets/modify_icon.svg";
 import deleteIcon from "../assets/delete.svg";
 
 export const GlobalStyle = createGlobalStyle`
-    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
     * { font-family: "Pretendard Variable", Pretendard, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
     body { background-color: #FFF; overflow-x: hidden; }
 `;
