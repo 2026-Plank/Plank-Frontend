@@ -20,7 +20,7 @@ export const ContentBox = styled.div`
     flex: 1;
     height: 100vh;
     overflow-y: auto;
-    margin-left: 130px;
+    // margin-left: 130px;
 
     &::-webkit-scrollbar {
         display: none;

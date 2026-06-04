@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"; // ★ useLocation 임포트 추가
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 
 //assets
@@ -18,6 +19,7 @@ import logo from "../assets/logo.svg";
 
 //styled-components
 const MenuBox = styled.div`
+    border: 10px solid red !important;
     height: 100vh; width: 130px; background-color: #F9F9F8; transition: 0.3s ease-in-out;
     display: flex; flex-direction: column; align-items: center; position: fixed; z-index: 10;
     &:hover { width: 300px; }
@@ -104,6 +106,8 @@ const TabText = styled.span`
 `;
 
 export default function Menu() {
+    console.log("MENU TEST 999");
+    console.log("Menu Render");
     const navigate = useNavigate();
     const location = useLocation(); // ★ 선언문 추가
 
@@ -117,51 +121,64 @@ export default function Menu() {
     
     const isAlarmActive = location.pathname === "/notification";
 
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 480);
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     return (
         <>
-            {/* 데스크톱 사이드 바 */}
-            <MenuBox onClick={(e) => e.stopPropagation()}>
-                <Symbol className="symbol" src={symbol} />
-                <Logo className="logo" src={logo} />
-                {menus.map((menu) => {
-                    const isActive = location.pathname === menu.path;
-                    return (
-                    <Item key={menu.path} onClick={() => navigate(menu.path)}>
-                        <Background $active={isActive} />
-                        <Icon src={isActive ? menu.activeIcon : menu.icon} />
-                        <Text className="text">{menu.label}</Text>
+            {!isMobile && (
+                <MenuBox onClick={(e) => e.stopPropagation()}>
+                    <Symbol className="symbol" src={symbol} />
+                    <Logo className="logo" src={logo} />
+                    {menus.map((menu) => {
+                        const isActive = location.pathname === menu.path;
+                        return (
+                        <Item key={menu.path} onClick={() => navigate(menu.path)}>
+                            <Background $active={isActive} />
+                            <Icon src={isActive ? menu.activeIcon : menu.icon} />
+                            <Text className="text">{menu.label}</Text>
+                        </Item>
+                        );
+                    })}
+                    <Line />
+                    <Item onClick={() => navigate("/notification")}>
+                        <Background $active={isAlarmActive} />
+                        <Icon src={alarm} />
+                        <Text className="text">NOTIFICATIONS</Text>
                     </Item>
-                    );
-                })}
-                <Line />
-                <Item onClick={() => navigate("/notification")}>
-                    <Background $active={isAlarmActive} />
-                    <Icon src={alarm} />
-                    <Text className="text">NOTIFICATIONS</Text>
-                </Item>
-            </MenuBox>
+                </MenuBox>
+            )}
             
-            {/* 하단 탭바: 모바일 (알림 포함 완료) */}
-            <BottomTabBar>
-                {menus.map((menu) => {
-                    const isActive = location.pathname === menu.path;
-                    return (
-                        <TabItem key={menu.path} onClick={() => navigate(menu.path)}>
-                            <TabActiveBar $active={isActive} />
-                            <TabIcon src={isActive ? menu.activeIcon : menu.icon} />
-                            <TabText $active={isActive}>{menu.label}</TabText>
-                        </TabItem>
-                    );
-                })}
-                
-                {/* ★ 모바일 하단 탭바용 알림 메뉴 항목 */}
-                <TabItem onClick={() => navigate("/notification")}>
-                    <TabActiveBar $active={isAlarmActive} />
-                    {/* 필요 시 alarm 활성화 아이콘을 분리해 지정할 수 있습니다 */}
-                    <TabIcon src={alarm} style={{ filter: isAlarmActive ? "invert(62%) sepia(51%) saturate(415%) hue-rotate(33deg) brightness(95%) contrast(89%)" : "none" }} />
-                    <TabText $active={isAlarmActive}>ALARM</TabText>
-                </TabItem>
-            </BottomTabBar>
+            {isMobile && (
+                <BottomTabBar>
+                    {menus.map((menu) => {
+                        const isActive = location.pathname === menu.path;
+                        return (
+                            <TabItem key={menu.path} onClick={() => navigate(menu.path)}>
+                                <TabActiveBar $active={isActive} />
+                                <TabIcon src={isActive ? menu.activeIcon : menu.icon} />
+                                <TabText $active={isActive}>{menu.label}</TabText>
+                            </TabItem>
+                        );
+                    })}
+                    
+                    {/* ★ 모바일 하단 탭바용 알림 메뉴 항목 */}
+                    <TabItem onClick={() => navigate("/notification")}>
+                        <TabActiveBar $active={isAlarmActive} />
+                        {/* 필요 시 alarm 활성화 아이콘을 분리해 지정할 수 있습니다 */}
+                        <TabIcon src={alarm} style={{ filter: isAlarmActive ? "invert(62%) sepia(51%) saturate(415%) hue-rotate(33deg) brightness(95%) contrast(89%)" : "none" }} />
+                        <TabText $active={isAlarmActive}>ALARM</TabText>
+                    </TabItem>
+                </BottomTabBar>
+            )}
         </>
     );
 }

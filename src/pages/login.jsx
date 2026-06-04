@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
-import { setAuthSession } from "../utils/api";
+import { apiRequest, setAuthSession } from "../utils/api";
 import logo from "../assets/logo.svg";
 
 export const GlobalStyle = createGlobalStyle`
@@ -181,20 +181,13 @@ export default function Login() {
         }
 
         try {
-            const res = await fetch("/api/auth/login", {
+            const res = await apiRequest("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userid: loginId.trim(), password }),
             });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                alert(`로그인 실패: ${data.message || data.error || "서버 오류"}`);
-                return;
-            }
-
-            const data = await res.json();
-            setAuthSession({ token: data.token, user: data.user });
+            setAuthSession({ token: res.token, user: res.user });
             navigate("/homepage");
         } catch (err) {
             alert("로그인 실패");

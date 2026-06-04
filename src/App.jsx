@@ -39,7 +39,6 @@ function App() {
         <Route path="/team-detail" element={<TeamDetailCreatePage />} />
         <Route path="/notification" element={ <NotificationPage /> } />
         <Route path="/mypage_user" element={<Mypage_user />} />
-
       </Routes>
     </Router>
   );
