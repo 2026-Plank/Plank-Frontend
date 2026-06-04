@@ -1,12 +1,11 @@
 import styled from "styled-components";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { GlobalStyle } from "../pages/homePage";
+import Menu from "./menu_layout";
+import { apiRequest } from "../utils/api";
 
 import previous_arrow from "../assets/arrow_previous.svg";
-
-import { GlobalStyle } from "../pages/homePage";
-import Menu from "./menu";
-import { apiRequest } from "../utils/api";
 
 export const PageLayout = styled.div`
     display: flex;
@@ -20,7 +19,7 @@ export const ContentBox = styled.div`
     flex: 1;
     height: 100vh;
     overflow-y: auto;
-    // margin-left: 130px;
+    margin-left: 130px;
 
     &::-webkit-scrollbar {
         display: none;
@@ -513,8 +512,6 @@ const formatDateLabel = (value) => {
 };
 
 export default function SchedulePage() {
-    const navigate = useNavigate();
-    const location = useLocation();
     const today = new Date();
     const [currentYear, setCurrentYear] = useState(today.getFullYear());
     const [currentMonth, setCurrentMonth] = useState(today.getMonth());

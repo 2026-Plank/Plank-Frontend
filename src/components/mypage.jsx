@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import Menu from "./menu";
+import Menu from "./menu_layout";
 import { GlobalStyle } from "../pages/homePage";
 
 // ★ schedule_page에서 가져온 공통 레이아웃 컴포넌트

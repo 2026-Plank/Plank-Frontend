@@ -18,7 +18,7 @@ import teamLogo from "../assets/logo.svg";
 import backIcon from "../assets/detail_back_icon.svg";
 
 import { GlobalStyle } from "../pages/homePage";
-import Menu from "./menu";
+import Menu from "./menu_layout";
 import { PageLayout, ContentBox } from "./schedule_page";
 import { apiRequest, getAuthToken, mapApiTeam } from "../utils/api";
 

@@ -11,7 +11,7 @@ import hideIcon from "../assets/hiding_icon.svg";
 import { GlobalStyle } from "../pages/homePage";
 import { PageLayout, ContentBox } from "./schedule_page";
 import { apiRequest, getAuthToken, mapApiTeam } from "../utils/api";
-import Menu from "./menu";
+import Menu from "./menu_layout";
 
 const HeaderBar = styled.header`
   display: flex;

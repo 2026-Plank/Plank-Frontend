@@ -29,7 +29,7 @@ import logo from '../assets/logo.svg';
 import backIcon from "../assets/detail_back_icon.svg";
 import { GlobalStyle } from "../pages/homePage";
 
-import Menu from "./menu.jsx";
+import Menu from "./menu_layout.jsx";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 
