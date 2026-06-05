@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import Menu from "./menu_layout";
 import { GlobalStyle } from "../pages/homePage";
+import { apiRequest,  } from "../utils/api";
 
 // ★ schedule_page에서 가져온 공통 레이아웃 컴포넌트
 import { PageLayout, ContentBox } from "./schedule_page";
@@ -343,14 +343,8 @@ const StatLabel = styled.div`
     }
 `;
 
-const getAuthConfig = () => {
-    const token = localStorage.getItem("token");
-    return token ? { headers: { Authorization: `Bearer ${token}` } } : null;
-};
-
 export default function MyPage() {
     const navigate = useNavigate();
-    const location = useLocation();
     const [profileData, setProfileData] = useState(null);
     const [keyword, setKeyword] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -361,9 +355,15 @@ export default function MyPage() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem("token");
+        if (!token) return null;
+        return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    };
+
     const loadData = async () => {
-        const config = getAuthConfig();
-        if (!config) {
+        const headers = getAuthHeaders();
+        if (!headers) {
             setError("로그인이 필요합니다.");
             return;
         }
@@ -371,21 +371,22 @@ export default function MyPage() {
         try {
             setError("");
             const [profileRes, friendsRes, requestsRes] = await Promise.all([
-                axios.get("/api/users/profile", config),
-                axios.get("/api/users/friends", config),
-                axios.get("/api/users/friends/requests", config)
+                apiRequest("/api/users/profile", { headers }),
+                apiRequest("/api/users/friends", { headers }),
+                apiRequest("/api/users/friends/requests", { headers }),
             ]);
-            setProfileData(profileRes.data);
-            setFriends(friendsRes.data.friends || []);
-            setRequests(requestsRes.data.requests || []);
+            setProfileData(profileRes);
+            setFriends(friendsRes.friends || []);
+            setRequests(requestsRes.requests || []);
+
             const [receivedRes, sentRes] = await Promise.all([
-                axios.get("/api/feedbacks/mine/received", config),
-                axios.get("/api/feedbacks/mine/sent", config)
+                apiRequest("/api/feedbacks/mine/received", { headers }),
+                apiRequest("/api/feedbacks/mine/sent", { headers }),
             ]);
-            setReceivedFeedbacks(receivedRes.data.feedbacks || []);
-            setSentFeedbacks(sentRes.data.feedbacks || []);
+            setReceivedFeedbacks(receivedRes.feedbacks || []);
+            setSentFeedbacks(sentRes.feedbacks || []);
         } catch (loadError) {
-            setError(loadError.response?.data?.error || loadError.response?.data?.message || "친구 정보를 불러오지 못했습니다.");
+            setError(loadError.message || "친구 정보를 불러오지 못했습니다.");
         }
     };
 
@@ -399,8 +400,8 @@ export default function MyPage() {
     };
 
     const handleSearch = async () => {
-        const config = getAuthConfig();
-        if (!config) {
+        const headers = getAuthHeaders();
+        if (!headers) {
             setError("로그인이 필요합니다.");
             return;
         }
@@ -412,49 +413,59 @@ export default function MyPage() {
         try {
             setMessage("");
             setError("");
-            const response = await axios.get(`/api/users/search?keyword=${encodeURIComponent(keyword)}`, config);
-            setSearchResults(response.data.users || []);
+            const res = await apiRequest(`/api/users/search?keyword=${encodeURIComponent(keyword)}`, { headers });
+            setSearchResults(res.users || []);
         } catch (searchError) {
-            setError(searchError.response?.data?.error || "사용자 검색에 실패했습니다.");
+            setError(searchError.message || "사용자 검색에 실패했습니다.");
         }
     };
 
     const handleAddFriend = async (friendId) => {
-        const config = getAuthConfig();
-        if (!config) return;
+        const headers = getAuthHeaders();
+        if (!headers) return;
         try {
-            await axios.post("/api/users/friends", { friendId }, config);
+            await apiRequest("/api/users/friends", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ friendId }),
+            });
             setMessage("친구 요청을 보냈어요.");
             setError("");
             await loadData();
         } catch (requestError) {
-            setError(requestError.response?.data?.error || "친구 요청에 실패했습니다.");
+            setError(requestError.message || "친구 요청에 실패했습니다.");
         }
     };
 
     const handleAccept = async (relationId) => {
-        const config = getAuthConfig();
-        if (!config) return;
+        const headers = getAuthHeaders();
+        if (!headers) return;
         try {
-            await axios.put(`/api/users/friends/${relationId}/accept`, {}, config);
+            await apiRequest(`/api/users/friends/${relationId}/accept`, {
+                method: "PUT",
+                headers,
+            });
             setMessage("친구 요청을 수락했어요.");
             setError("");
             await loadData();
         } catch (acceptError) {
-            setError(acceptError.response?.data?.error || "친구 요청 수락에 실패했습니다.");
+            setError(acceptError.message || "친구 요청 수락에 실패했습니다.");
         }
     };
 
     const handleDelete = async (relationId) => {
-        const config = getAuthConfig();
-        if (!config) return;
+        const headers = getAuthHeaders();
+        if (!headers) return;
         try {
-            await axios.delete(`/api/users/friends/${relationId}`, config);
+            await apiRequest(`/api/users/friends/${relationId}`, {
+                method: "DELETE",
+                headers,
+            });
             setMessage("친구를 삭제했어요.");
             setError("");
             await loadData();
         } catch (deleteError) {
-            setError(deleteError.response?.data?.error || "친구 삭제에 실패했습니다.");
+            setError(deleteError.message || "친구 삭제에 실패했습니다.");
         }
     };
 
