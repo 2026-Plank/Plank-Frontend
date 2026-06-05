@@ -59,6 +59,7 @@ const AlarmWapper = styled.div`
     box-sizing: border-box;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
 
     &:hover,
     &:active {
