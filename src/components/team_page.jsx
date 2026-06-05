@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 
 import searchIcon from "../assets/search_icon.png";
 import menuIcon from "../assets/menu.svg";
-import editIcon from "../assets/modify_icon.svg";
+import addIcon from "../assets/add_icon.svg";
 import deleteIcon from "../assets/delete_icon.svg";
+import downIcon from "../assets/hiding_down_icon.svg";
 import hideIcon from "../assets/hiding_icon.svg";
+import editIcon from "../assets/modify_icon.svg";
 
 import { GlobalStyle } from "../pages/homePage";
 import { PageLayout, ContentBox } from "./schedule_page";
@@ -463,7 +465,7 @@ export default function TeamPage() {
           <HideWapper type="button" onClick={() => setShowHidden((prev) => !prev)}>
             <HideText>숨김 ({hiddenCount})</HideText>
             <HideIcon
-              src={hideIcon}
+              src={downIcon}
               alt=""
               style={{
                 transform: showHidden ? "rotate(180deg)" : "rotate(0deg)",
@@ -473,7 +475,7 @@ export default function TeamPage() {
           </HideWapper>
 
           <CreateButton type="button" onClick={() => navigate("/team-create")}>
-            <CreateIcon src={editIcon} alt="프로젝트 생성" />
+            <CreateIcon src={addIcon} alt="프로젝트 생성" />
           </CreateButton>
         </ContentBox>
       </PageLayout>
