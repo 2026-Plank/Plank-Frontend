@@ -478,7 +478,6 @@ export default function ChatPage() {
                 setChatList(list);
                 setSelectedChat((prev) => prev || list[0] || null);
                 setError("");
-                console.log('conversations:', conversations);
             } catch (err) {
                 setError(err.message || "채팅 목록을 불러오지 못했습니다.");
             } finally {
