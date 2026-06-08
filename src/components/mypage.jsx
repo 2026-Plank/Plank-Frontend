@@ -27,6 +27,7 @@ const ManageIcon = styled.img`
 `;
 
 const ProfileCard = styled.section`
+    position: relative; /* absolute 아이콘의 기준점이 됨 */
     display: flex;
     align-items: center;
     gap: 20px;
@@ -44,6 +45,7 @@ const ProfileCard = styled.section`
 `;
 
 const ProfileImg = styled.img`
+    position: absolute;
     width: 88px;
     height: 88px;
     border-radius: 50%;
@@ -147,7 +149,7 @@ const Input = styled.input`
 
     @media (max-width: 480px) {
         height: 46px;
-        font-size: 14px;
+        font-size: 16px;
     }
 `;
 
@@ -476,10 +478,9 @@ export default function MyPage() {
                 <Menu />
                 <ContentBox>
                     <TopBar>
-                        <ManageIcon src={setting} onClick={() => navigate("/mypage_user")} />
                     </TopBar>
-
                     <ProfileCard>
+                        <ManageIcon src={setting} onClick={() => navigate("/mypage_user")} />
                         <ProfileImg src={profile} alt="profile" />
                         <div>
                             <ProfileName>{profileData?.name || profileData?.userid || "내 프로필"}</ProfileName>
