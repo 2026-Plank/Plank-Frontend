@@ -48,9 +48,9 @@ const ManageIcon = styled.img`
 `;
 
 const ProfileCard = styled.section`
-    position: relative !important; /* ⭐️ 브라우저의 다른 설정을 완전히 무시하고 절대 기준점으로 고정 */
-    display: flex !important;
-    align-items: center !important;
+    position: relative; /* 아이콘의 기준점 역할은 유지 */
+    display: flex;
+    align-items: center;
     gap: 20px;
     border: 1px solid #e4e4e3;
     border-radius: 24px;
@@ -59,17 +59,19 @@ const ProfileCard = styled.section`
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
     margin-top: 12px;
     
-    /* ⭐️ 부모 박스(ContentBox)가 아무리 쥐어짜도 뚫고 나가지 못하게 방어막 구축 */
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important; /* 내부 요소가 경계선 밖으로 나가는 것 방지 */
+    /* ⭐️ 패딩과 테두리가 너비 계산에 포함되도록 기본 설정 (데스크톱 깨짐 방지) */
+    box-sizing: border-box; 
 
     @media (max-width: 480px) {
-        padding: 20px !important;
+        padding: 20px;
         gap: 16px;
         border-radius: 16px;
-        padding-right: 60px !important; /* 모바일에서 아이콘 공간을 더 넉넉하게 확보 */
+        padding-right: 60px; /* 모바일에서 우측 아이콘 공간 확보 */
+        
+        /* ⭐️ 모바일 화면(480px 이하)에서만 부모 상자를 뚫고 나가지 못하게 강제 고정 */
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden; 
     }
 `;
 
