@@ -31,6 +31,7 @@ const AlarmBox = styled.div`
     flex-direction: column;
     gap: 12px;
     width: 100%;
+    align-items: center;
 `;
 
 const NotificationText = styled.span`
