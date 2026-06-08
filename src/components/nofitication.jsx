@@ -141,6 +141,7 @@ const getActionPath = (notification) => {
     return "/notification";
 };
 
+
 export default function NotificationPage() {
     const navigate = useNavigate();
     const [messages, setMessages] = useState([]);
