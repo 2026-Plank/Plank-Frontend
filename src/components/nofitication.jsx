@@ -141,69 +141,40 @@ const getActionPath = (notification) => {
     return "/notification";
 };
 
-const fetcher = async (url) => {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("로그인이 필요합니다.");
-    return apiRequest(url, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-        }
-    });
-};
 
 export default function NotificationPage() {
     const navigate = useNavigate();
-    const { message, error, loading } = useSWR(
-        getAuthToken() ? "/api/notifications" : null, // 로그인 되었을 때만 요청
-        fetcher,
-        {
-            revalidateOnFocus: true, // 유저가 브라우저 탭을 다시 볼 때 자동으로 새 알림 갱신
-            dedupingInterval: 5000   // 5초 안의 반복 요청은 캐시로 처리해서 백엔드 부담 줄임
-        }
-    );
-    // const [messages, setMessages] = useState([]);
-    // const [loading, setLoading] = useState(false);
-    // const [error, setError] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const messages = Array.isArray(data) ? data : data?.notifications || [];
-    // useEffect(() => {
-    //     const loadNotifications = async () => {
-    //         if (!getAuthToken()) {
-    //             setError("로그인이 필요합니다.");
-    //             return;
-    //         }
+    useEffect(() => {
+        const loadNotifications = async () => {
+            if (!getAuthToken()) {
+                setError("로그인이 필요합니다.");
+                return;
+            }
 
-    //         setLoading(true);
-    //         try {
-    //             const data = await apiRequest("/api/notifications");
-    //             setMessages(Array.isArray(data) ? data : data.notifications || []);
-    //             setError("");
-    //         } catch (err) {
-    //             setError(err.message || "알림을 불러오지 못했습니다.");
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     };
+            setLoading(true);
+            try {
+                const data = await apiRequest("/api/notifications");
+                setMessages(Array.isArray(data) ? data : data.notifications || []);
+                setError("");
+            } catch (err) {
+                setError(err.message || "알림을 불러오지 못했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    //     loadNotifications();
-    // }, []);
+        loadNotifications();
+    }, []);
 
     const handleRead = async (notification) => {
         if (!notification.isRead) {
-            // ⭐️ SWR 낙관적 업데이트 (서버 응답을 기다리지 않고 화면부터 즉시 '읽음'으로 표시)
-            mutate(
-                (prev) => {
-                    const list = Array.isArray(prev) ? prev : prev?.notifications || [];
-                    const updated = list.map((msg) => msg.id === notification.id ? { ...msg, isRead: true } : msg);
-                    return Array.isArray(prev) ? updated : { ...prev, notifications: updated };
-                },
-                false // 우선 서버 검증 없이 화면부터 바로 바꿈
-            );
-
+            setMessages((prev) => prev.map((msg) => msg.id === notification.id ? { ...msg, isRead: true } : msg));
             try {
                 await apiRequest(`/api/notifications/${notification.id}/read`, { method: "PUT" });
-                mutate(); // 서버에 잘 반영되었는지 최종 확인 동기화
             } catch (err) {
                 console.error(err);
             }
