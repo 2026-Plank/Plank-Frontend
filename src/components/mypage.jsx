@@ -10,6 +10,11 @@ import { PageLayout, ContentBox } from "./schedule_page";
 import setting from "../assets/setting.svg";
 import profile from "../assets/profile.svg";
 
+const ProfileTextContainer = styled.div`
+    flex: 1;
+    min-width: 0;
+`;
+
 const TopBar = styled.div`
     display: flex;
     justify-content: flex-end;
@@ -21,36 +26,50 @@ const TopBar = styled.div`
 `;
 
 const ManageIcon = styled.img`
-    width: 32px;
-    height: 32px;
+    position: absolute !important; /* ⭐️ 무조건 absolute로 고정 */
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 28px !important; /* 오른쪽 패딩 구역에 강제 고정 */
+    
+    /* ⭐️ 모바일에서 찌그러지는 현상을 원천 차단하기 위해 고정 크기 강제 */
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;  /* flex-shrink가 안 먹힐 때를 대비한 최소 크기 강제 */
+    min-height: 32px !important;
     cursor: pointer;
-    position: absolute; /* ★ 절대 좌표 배치 */
-    top: 50%;           /* ★ 세로 중앙 정렬을 위한 기본축 설정 */
-    transform: translateY(-50%); /* ★ 세로 정렬 보정 */
-    right: 28px;        /* ★ 오른쪽 벽(테두리)에서 28px 띄우기 (카드의 padding과 일치) */
 
     @media (max-width: 480px) {
-        right: 20px;    /* ★ 모바일에서는 오른쪽 벽에서 20px 띄우기 */
-        width: 24px;
-        height: 24px;
+        right: 20px !important;
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
     }
 `;
 
 const ProfileCard = styled.section`
-    position: relative;
-    display: flex;
-    align-items: center;
+    position: relative !important; /* ⭐️ 브라우저의 다른 설정을 완전히 무시하고 절대 기준점으로 고정 */
+    display: flex !important;
+    align-items: center !important;
     gap: 20px;
     border: 1px solid #e4e4e3;
     border-radius: 24px;
     padding: 28px;
     background: #fff;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+    margin-top: 12px;
+    
+    /* ⭐️ 부모 박스(ContentBox)가 아무리 쥐어짜도 뚫고 나가지 못하게 방어막 구축 */
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important; /* 내부 요소가 경계선 밖으로 나가는 것 방지 */
 
     @media (max-width: 480px) {
-        padding: 20px;
+        padding: 20px !important;
         gap: 16px;
         border-radius: 16px;
+        padding-right: 60px !important; /* 모바일에서 아이콘 공간을 더 넉넉하게 확보 */
     }
 `;
 
@@ -61,8 +80,8 @@ const ProfileImg = styled.img`
     object-fit: cover;
 
     @media (max-width: 480px) {
-        width: 64px;
-        height: 64px;
+        width: 52px;
+        height: 52px;
     }
 `;
 
@@ -70,6 +89,7 @@ const ProfileName = styled.div`
     color: #333;
     font-size: 28px;
     font-weight: 700;
+    word-break: break-all;
 
     @media (max-width: 480px) {
         font-size: 20px;
@@ -80,6 +100,7 @@ const ProfileSub = styled.div`
     margin-top: 8px;
     color: #777;
     font-size: 15px;
+    word-break: break-all;
 
     @media (max-width: 480px) {
         font-size: 13px;
@@ -92,6 +113,12 @@ const Grid = styled.div`
     grid-template-columns: 1.1fr 0.9fr;
     gap: 24px;
     margin-top: 24px;
+    
+    /* ⭐️ 추가: Grid 자체와 자식 요소들이 화면 밖으로 늘어나는 것을 방지 */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0; 
 
     @media (max-width: 1100px) {
         grid-template-columns: 1fr;
@@ -99,6 +126,7 @@ const Grid = styled.div`
     @media (max-width: 480px) {
         gap: 16px;
         margin-top: 16px;
+        width: 100% !important; /* 모바일에서 무조건 부모 너비에 맞춤 */
     }
 `;
 
@@ -108,10 +136,17 @@ const Card = styled.section`
     padding: 24px;
     background: #fff;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+    
+    /* ⭐️ 핵심 추가: 패딩이 늘어나도 전체 너비(100%) 안에 포함되도록 계산 방식 변경 */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box !important; 
+    min-width: 0; /* 내부 텍스트 밀림으로 인한 카드 늘어남 방지 */
 
     @media (max-width: 480px) {
         padding: 18px;
         border-radius: 16px;
+        width: 100% !important;
     }
 `;
 
@@ -141,16 +176,24 @@ const SearchRow = styled.div`
     display: flex;
     gap: 10px;
     margin-top: 20px;
+    
+    /* ⭐️ 추가: 검색줄 전체가 카드 너비를 절대 넘지 못하도록 제어 */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 `;
 
 const Input = styled.input`
     flex: 1;
+    min-width: 0; /* ⭐️ 핵심 추가: flex 박스 안에서 input이 부모를 뚫고 늘어나는 현상 방지 */
     height: 52px;
     padding: 0 16px;
     border: 1px solid #e1e1e0;
     border-radius: 14px;
     font-size: 15px;
     outline: none;
+    box-sizing: border-box; /* ⭐️ 추가 */
+    
     &:focus {
         border-color: #c0da58;
         box-shadow: 0 0 0 4px rgba(192, 218, 88, 0.16);
@@ -158,7 +201,8 @@ const Input = styled.input`
 
     @media (max-width: 480px) {
         height: 46px;
-        font-size: 14px;
+        font-size: 14px; /* 모바일에서 텍스트가 너무 크면 입력창이 밀리므로 약간 축소 */
+        padding: 0 12px;
     }
 `;
 
@@ -174,11 +218,13 @@ const Button = styled.button`
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
+    flex-shrink: 0; /* ⭐️ 추가: 화면이 좁아져도 버튼 글자가 찌그러지거나 잘리지 않게 고정 */
+    box-sizing: border-box; /* ⭐️ 추가 */
 
     @media (max-width: 480px) {
         height: 46px;
-        padding: 0 14px;
-        font-size: 13px;
+        padding: 0 16px;
+        font-size: 14px;
     }
 `;
 
@@ -486,13 +532,12 @@ export default function MyPage() {
             <PageLayout>
                 <Menu />
                 <ContentBox>
-                    <TopBar />
                     <ProfileCard>
                         <ProfileImg src={profile} alt="profile" />
-                        <div>
+                        <ProfileTextContainer>
                             <ProfileName>{profileData?.name || profileData?.userid || "내 프로필"}</ProfileName>
                             <ProfileSub>{profileData?.email || "로그인 정보를 불러오는 중입니다."}</ProfileSub>
-                        </div>
+                        </ProfileTextContainer>
                         <ManageIcon src={setting} onClick={() => navigate("/mypage_user")} />
                     </ProfileCard>
 

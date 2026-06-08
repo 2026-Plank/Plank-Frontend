@@ -10,7 +10,7 @@ import previous_arrow from "../assets/arrow_previous.svg";
 export const PageLayout = styled.div`
     display: flex;
     min-height: 100vh;
-    background-color: #f9f9f9; /* 배경색이 잘 구별되도록 추가 */
+    background-color: #f9f9f9;
 `;
 
 export const ContentBox = styled.div`
@@ -30,11 +30,10 @@ export const ContentBox = styled.div`
     @media (max-width: 480px) {
         margin-left: 0;
         padding: 16px;
-        /* ★ 핵심: 모바일에서는 고정 높이를 해제하여 상단 Box가 밀리지 않고 전체 스크롤이 되도록 함 */
         height: auto;
         min-height: 100vh;
         overflow-y: visible;
-        padding-bottom: 100px; /* 하단 네비게이션 바 여유 공간 */
+        padding-bottom: 100px;
     }
 `;
 
