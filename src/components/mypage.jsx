@@ -24,10 +24,20 @@ const ManageIcon = styled.img`
     width: 32px;
     height: 32px;
     cursor: pointer;
+    position: absolute; /* ★ 절대 좌표 배치 */
+    top: 50%;           /* ★ 세로 중앙 정렬을 위한 기본축 설정 */
+    transform: translateY(-50%); /* ★ 세로 정렬 보정 */
+    right: 28px;        /* ★ 오른쪽 벽(테두리)에서 28px 띄우기 (카드의 padding과 일치) */
+
+    @media (max-width: 480px) {
+        right: 20px;    /* ★ 모바일에서는 오른쪽 벽에서 20px 띄우기 */
+        width: 24px;
+        height: 24px;
+    }
 `;
 
 const ProfileCard = styled.section`
-    position: relative; /* absolute 아이콘의 기준점이 됨 */
+    position: relative;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -45,7 +55,6 @@ const ProfileCard = styled.section`
 `;
 
 const ProfileImg = styled.img`
-    position: absolute;
     width: 88px;
     height: 88px;
     border-radius: 50%;
@@ -149,7 +158,7 @@ const Input = styled.input`
 
     @media (max-width: 480px) {
         height: 46px;
-        font-size: 16px;
+        font-size: 14px;
     }
 `;
 
@@ -477,15 +486,14 @@ export default function MyPage() {
             <PageLayout>
                 <Menu />
                 <ContentBox>
-                    <TopBar>
-                    </TopBar>
+                    <TopBar />
                     <ProfileCard>
-                        <ManageIcon src={setting} onClick={() => navigate("/mypage_user")} />
                         <ProfileImg src={profile} alt="profile" />
                         <div>
                             <ProfileName>{profileData?.name || profileData?.userid || "내 프로필"}</ProfileName>
                             <ProfileSub>{profileData?.email || "로그인 정보를 불러오는 중입니다."}</ProfileSub>
                         </div>
+                        <ManageIcon src={setting} onClick={() => navigate("/mypage_user")} />
                     </ProfileCard>
 
                     <StatsRow>
