@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { GlobalStyle } from "../pages/homePage";
 import Menu from "./menu_layout";
 import { apiRequest } from "../utils/api";
@@ -33,7 +32,9 @@ export const ContentBox = styled.div`
         height: auto;
         min-height: 100vh;
         overflow-y: visible;
+        overflow-x: hidden;     /* ← 추가: 가로 스크롤 방지 */
         padding-bottom: 100px;
+        box-sizing: border-box; /* ← 추가 */
     }
 `;
 
@@ -132,6 +133,8 @@ const MainBox = styled.div`
     @media (max-width: 480px) {
         padding: 12px 0px;
         gap: 20px;
+        flex: none;
+        width: 100%;
     }
 `;
 
@@ -143,6 +146,9 @@ const Panel = styled.section`
 
     @media (max-width: 480px) {
         padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;  
     }
 `;
 
@@ -228,7 +234,7 @@ const DateCell = styled.div`
     text-align: center;
     font-family: Pretendard;
     font-style: normal;
-    font-weight: 400;
+    font-weight: 700;
     line-height: normal;
     display: flex;
     flex-direction: column;
@@ -243,13 +249,22 @@ const DateCell = styled.div`
         if ($count >= 5) return "var(--Light-Green-3, #90A442)";
         return "transparent";
     }};
-    border: ${({ $isToday }) => $isToday ? "2px solid var(--Light-Green-4, #D7E697)" : "none"};
+    border: ${({ $isToday, $count }) =>
+        $isToday && $count === 0
+            ? "2px solid var(--Light-Green-4, #D7E697)" : "none"
+    };
     color: ${({ $isCurrent, $count }) => {
-        if ($count > 0) return "var(--white-1, #FFF)";
+        if ($count > 0) return "#333";
         return $isCurrent 
             ? "var(--Gray-7, #70716F)" 
             : "var(--Gray-5, #C9C9C8)";
     }};
+
+    @media (max-width: 480px) {
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 12px;
+    }
 `;
 
 const DateNumber = styled.div`
@@ -257,7 +272,7 @@ const DateNumber = styled.div`
     font-weight: 700;
 
     @media (max-width: 480px) {
-        font-size: 14px;
+        font-size: 12px;
     }
 `;
 
