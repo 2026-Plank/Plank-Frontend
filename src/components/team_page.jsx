@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import searchIcon from "../assets/search_icon.png";
 import menuIcon from "../assets/menu.svg";
@@ -325,6 +325,7 @@ const EmptyText = styled.p`
 
 export default function TeamPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [teams, setTeams] = useState([]);
   const [showHidden, setShowHidden] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -350,6 +351,10 @@ export default function TeamPage() {
         setOpenMenuId(null);
       };
     }, []);
+
+    useEffect(() => {
+      setOpenMenuId(null);
+    }, [location]);
 
   useEffect(() => {
     if (!getAuthToken()) {
