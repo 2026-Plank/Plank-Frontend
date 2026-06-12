@@ -338,13 +338,18 @@ export default function TeamPage() {
     .filter((team) => (showHidden ? team.hidden : !team.hidden))
     .filter((team) => team.title.toLowerCase().includes(search.trim().toLowerCase()));
 
-  useEffect(() => {
-    const handleClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    useEffect(() => {
+      const handleClick = (event) => {
+        if (menuRef.current && !menuRef.current.contains(event.target)) {
+          setOpenMenuId(null);
+        }
+      };
+      document.addEventListener("mousedown", handleClick);
+      return () => {
+        document.removeEventListener("mousedown", handleClick);
+        setOpenMenuId(null);
+      };
+    }, []);
 
   useEffect(() => {
     if (!getAuthToken()) {
