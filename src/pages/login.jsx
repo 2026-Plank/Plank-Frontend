@@ -229,10 +229,6 @@ export default function Login() {
                 </LoginButton>
 
                 <LinkGroup>
-                    <SubLink to="/#">아이디 찾기</SubLink>
-                    <Divider>|</Divider>
-                    <SubLink to="/#">비밀번호 찾기</SubLink>
-                    <Divider>|</Divider>
                     <SubLink to="/signup">회원가입</SubLink>
                 </LinkGroup>
             </Container>
