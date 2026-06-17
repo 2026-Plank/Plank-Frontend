@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { GlobalStyle } from "../pages/homePage";
 import Menu from "./menu_layout";
 import { PageLayout, ContentBox } from "./schedule_page";
-import { apiRequest, getAuthToken } from "../utils/api";
+import { API_BASE_URL, apiRequest, getAuthToken } from "../utils/api";
 
 const HeaderBox = styled.div`
     margin: 40px 0 20px 0;
@@ -168,6 +168,23 @@ export default function NotificationPage() {
         };
 
         loadNotifications();
+    }, []);
+
+    useEffect(() => {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const events = new EventSource(`${API_BASE_URL}/api/chats/events?token=${encodeURIComponent(token)}`);
+        const handleNotification = (event) => {
+            const notification = JSON.parse(event.data);
+            setMessages((prev) => {
+                if (prev.some((message) => message.id === notification.id)) return prev;
+                return [notification, ...prev];
+            });
+        };
+
+        events.addEventListener("notification", handleNotification);
+        return () => events.close();
     }, []);
 
     const handleRead = async (notification) => {
