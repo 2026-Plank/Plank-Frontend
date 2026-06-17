@@ -87,7 +87,7 @@ const DateWapper = styled.div`
 `;
 const DateBox = styled.div`
     display: flex;
-    width: 95px;
+    width: 145px;
     height: 35px;
     padding: 7px 16px;
     justify-content: center;
@@ -105,7 +105,7 @@ const DateInput = styled.input`
     font-weight: 400;
     line-height: normal;
     letter-spacing: -0.022px;
-    width: 80px;
+    width: 128px;
     border: none;
     outline: none;
     background: var(--Gray-4, #E0E0E0);
@@ -324,7 +324,9 @@ const TeamContentInput = styled.input`
 const getPeriodParts = (period) => {
     const text = String(period || "").trim();
     if (!text) return [formatToday(), ""];
-    const parts = text.split(/\s*[-~]\s*/).filter(Boolean);
+    const parts = text.includes("~")
+        ? text.split(/\s*~\s*/).filter(Boolean)
+        : text.split(/\s+-\s+/).filter(Boolean);
     if (parts.length >= 2) return [parts[0], parts.slice(1).join(" ~ ")];
     return [formatToday(), parts[0] || ""];
 };
@@ -356,14 +358,6 @@ const buildInitialGroups = (team) => {
         acc[t.join_team].explan.push(t.explan);
     });
 
-    if (Object.keys(acc).length === 0) {
-        acc["전체"] = {
-            members: team.members ?? [],
-            period: formatTeamPeriod(team),
-            explan: [team.description || "프로젝트 업무 내용을 추가해 주세요."],
-            isNew: false,
-        };
-    }
     return acc;
 };
 
@@ -595,26 +589,6 @@ export default function TeamDetailCreatePage(){
                             </DateWapper>
                         </TextWapper>
                         <TextWapper>
-                            <InfoText>담당</InfoText>
-                            {editingCharge ? (
-                                <DataInput
-                                    value={charge}
-                                    onChange={(e) => {
-                                        setCharge(e.target.value);
-                                        setChargeWidth(calcWidth(e.target.value));  // ← 입력마다 너비 갱신
-                                    }}
-                                    autoFocus
-                                    $width={chargeWidth}
-                                />
-                            ) : (
-                                <DataText ref={chargeRef}>{charge}</DataText>
-                            )}
-                            <EditIcon src={edit_icon} onClick={() => {
-                                setChargeWidth(calcWidth(charge));  // ← 현재 텍스트 기준으로 초기 너비
-                                setEditingCharge(prev => !prev);
-                            }} />
-                        </TextWapper>
-                        <TextWapper>
                             <InfoText>참여코드</InfoText>
                             {editingCode ? (
                                 <DataInput
@@ -667,13 +641,15 @@ export default function TeamDetailCreatePage(){
                     </Wapper>
                     <TextLine $margin_size={30} />
                     <Wapper>
-                        <BottomWapper>
-                            <TextWapper>
-                                <VerticalLine />
-                                <DescriptionText>{team.title}</DescriptionText>
-                            </TextWapper>
-                            <ExplanText>{description || "프로젝트 설명이 없습니다."}</ExplanText>
-                        </BottomWapper>
+                        {description && description !== team.title && (
+                            <BottomWapper>
+                                <TextWapper>
+                                    <VerticalLine />
+                                    <DescriptionText>프로젝트 설명</DescriptionText>
+                                </TextWapper>
+                                <ExplanText>{description}</ExplanText>
+                            </BottomWapper>
+                        )}
                         <BottomWapper>
                             <TextWapper>
                                 <VerticalLine />
@@ -683,6 +659,9 @@ export default function TeamDetailCreatePage(){
                                 </IconWapper>
                             </TextWapper>
                             <TeamBox>
+                                {Object.keys(teamGroups).length === 0 && (
+                                    <EmptyText>등록된 일정/구성이 없습니다.</EmptyText>
+                                )}
                                 {Object.entries(teamGroups).map(([teamName, group], index) => (
                                     <TeamWapper key={index}>
                                         <NameWapper>

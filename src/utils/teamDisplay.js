@@ -2,7 +2,7 @@ const pad2 = (value) => String(value).padStart(2, "0");
 
 export const formatToday = () => {
   const today = new Date();
-  return `${pad2(today.getMonth() + 1)}/${pad2(today.getDate())}`;
+  return `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
 };
 
 export const formatDateText = (value) => {
@@ -10,7 +10,7 @@ export const formatDateText = (value) => {
   const text = String(value).trim();
   const date = new Date(text);
   if (Number.isNaN(date.getTime())) return text;
-  return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 };
 
 export const formatTeamPeriod = (team = {}) => {

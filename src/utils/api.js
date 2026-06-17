@@ -71,9 +71,10 @@ export const toDisplayDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
+  const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  return `${month}/${day}`;
+  return `${year}-${month}-${day}`;
 };
 
 export const toApiDate = (value) => {
@@ -106,20 +107,17 @@ export const mapApiTeam = (team) => {
       }))
     : [];
 
-  const departments = [...new Set(members.flatMap((member) => member.join_team).filter(Boolean))];
-  const groups = departments.length > 0 ? departments : ["기획자", "개발자", "디자이너"];
-
   return {
     id: team?.id ?? null,
     title: team?.name || team?.title || "프로젝트 이름 없음",
     period: deadline ? `~ ${deadline}` : team?.period || "",
     code: team?.teamCode || team?.code || "",
-    charge: team?.dpName || team?.charge || "프로젝트",
+    charge: team?.charge || "",
     progress: team?.progress ?? 0,
-    description: team?.description || team?.dpName || "프로젝트 설명",
+    description: team?.description || "",
     members,
-    team_explan: groups.map((group) => ({ join_team: group, explan: "업무 내용을 작성해 주세요." })),
-    team_deadline: groups.map((group) => ({ join_team: group, deadline: deadline ? `~ ${deadline}` : "-" })),
+    team_explan: Array.isArray(team?.team_explan) ? team.team_explan : [],
+    team_deadline: Array.isArray(team?.team_deadline) ? team.team_deadline : [],
     hidden: Boolean(team?.hidden),
     raw: team,
   };

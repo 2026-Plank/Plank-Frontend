@@ -454,9 +454,6 @@ const buildScheduleGroups = (team) => {
 		if (item.join_team && !groups[item.join_team]) groups[item.join_team] = [];
 	});
 
-	if (Object.keys(groups).length === 0) {
-		groups["전체"] = team.members ?? [];
-	}
 	return groups;
 };
 
@@ -575,10 +572,6 @@ export default function TeamDetailPage() {
 						<InfoText>기간</InfoText>
 						<DataText>{formatTeamPeriod(team)}</DataText>
 					</TextWapper>
-					<TextWapper>
-              			<InfoText>담당</InfoText>
-              			<DataText>{formatTeamCharge(team) || "-"}</DataText>
-            		</TextWapper>
             		<TextWapper>
 						<InfoText>참여코드</InfoText>
 						<DataText>{team.code}</DataText>
@@ -603,17 +596,15 @@ export default function TeamDetailPage() {
 
           		<TextLine $margin_size={10} />
           		<Wapper>
-					<BottomWapper>
-						<TextWapper>
-							<VerticalLine />
-							<DescriptionText>{team.title}</DescriptionText>
-						</TextWapper>
-						{team.description ? (
+					{team.description && team.description !== team.title && (
+						<BottomWapper>
+							<TextWapper>
+								<VerticalLine />
+								<DescriptionText>프로젝트 설명</DescriptionText>
+							</TextWapper>
 							<ExplanText>{team.description}</ExplanText>
-						) : (
-							<EmptyDescriptionText>프로젝트 설명이 없습니다.</EmptyDescriptionText>
-						)}
-					</BottomWapper>
+						</BottomWapper>
+					)}
 					<BottomWapper>
 						<TextWapper>
 							<VerticalLine />
@@ -667,6 +658,9 @@ export default function TeamDetailPage() {
 							<DescriptionText>프로젝트 일정/구성</DescriptionText>
 						</TextWapper>
 						<TeamBox>
+							{Object.keys(scheduleGroups).length === 0 && (
+								<EmptyDescriptionText>등록된 일정/구성이 없습니다.</EmptyDescriptionText>
+							)}
 							{Object.entries(scheduleGroups).map(([teamName, members], index) => (
 								<TeamWapper key={index}>
 									<NameWapper>
@@ -711,14 +705,6 @@ export default function TeamDetailPage() {
 											.map((t, i) => (
 												<TeamContentText key={i}>{t.explan}</TeamContentText>
 											))}
-											{!team.team_explan?.some((t) => {
-												const teams = Array.isArray(t.join_team)
-													? t.join_team
-													: String(t.join_team ?? "").split(",").map(t => t.trim());
-												return teams.includes(teamName);
-											}) && (
-												<TeamContentText>업무 내용을 추가해 주세요.</TeamContentText>
-											)}
 										</ContentWapper>
 									</TeamTextWapper>
 								</TeamWapper>
