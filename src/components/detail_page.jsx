@@ -36,7 +36,7 @@ import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
-import { formatTeamCharge, formatTeamPeriod } from "../utils/teamDisplay";
+import { formatTeamPeriod } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks, saveProjectTasks } from "../utils/projectTasks";
 
 //css
@@ -334,7 +334,7 @@ const TaskPanel = styled.div`
 `;
 const TaskForm = styled.form`
 	display: grid;
-	grid-template-columns: minmax(260px, 1fr) 180px 96px;
+	grid-template-columns: 180px minmax(260px, 1fr) 96px;
 	gap: 10px;
 	align-items: center;
 `;
@@ -350,15 +350,6 @@ const TaskInput = styled.input`
 		border-color: #C0DA58;
 		box-shadow: 0 0 0 3px rgba(192, 218, 88, 0.18);
 	}
-`;
-const TaskSelect = styled.select`
-	height: 44px;
-	border-radius: 8px;
-	border: 1px solid #C9C9C8;
-	padding: 0 12px;
-	font-size: 16px;
-	background: #FFF;
-	outline: none;
 `;
 const AddTaskButton = styled.button`
 	height: 44px;
@@ -377,7 +368,7 @@ const TaskList = styled.div`
 `;
 const TaskItem = styled.div`
 	display: grid;
-	grid-template-columns: 28px minmax(220px, 1fr) 120px 44px;
+	grid-template-columns: 28px 140px minmax(220px, 1fr) 44px 44px;
 	gap: 12px;
 	align-items: center;
 	min-height: 52px;
@@ -407,6 +398,16 @@ const TaskAssignee = styled.span`
 	overflow: hidden;
 	text-overflow: ellipsis;
 `;
+const EditTaskButton = styled.button`
+	width: 36px;
+	height: 36px;
+	border: none;
+	border-radius: 8px;
+	background: #F8F8F8;
+	color: #70716F;
+	font-size: 14px;
+	cursor: pointer;
+`;
 const DeleteTaskButton = styled.button`
 	width: 36px;
 	height: 36px;
@@ -428,34 +429,6 @@ const EmptyDescriptionText = styled.span`
 	color: var(--Gray-8, #575856);
 	font-size: 18px;
 `;
-
-const getMemberTeams = (member) => {
-	if (Array.isArray(member.join_team)) return member.join_team.filter(Boolean);
-	if (typeof member.join_team === "string") return member.join_team.split(",").map(t => t.trim()).filter(Boolean);
-	if (member.department) return [member.department];
-	return [];
-};
-
-const buildScheduleGroups = (team) => {
-	const groups = {};
-	(team.members ?? []).forEach((member) => {
-		const memberTeams = getMemberTeams(member);
-		const groupNames = memberTeams.length ? memberTeams : ["전체"];
-		groupNames.forEach((groupName) => {
-			if (!groups[groupName]) groups[groupName] = [];
-			groups[groupName].push(member);
-		});
-	});
-
-	(team.team_deadline ?? []).forEach((item) => {
-		if (item.join_team && !groups[item.join_team]) groups[item.join_team] = [];
-	});
-	(team.team_explan ?? []).forEach((item) => {
-		if (item.join_team && !groups[item.join_team]) groups[item.join_team] = [];
-	});
-
-	return groups;
-};
 
 const loadStoredTeam = () => {
 	try {
@@ -499,16 +472,14 @@ export default function TeamDetailPage() {
   };
   const [tasks, setTasks] = useState(() => loadProjectTasks(team));
   const [taskTitle, setTaskTitle] = useState("");
-  const [assigneeId, setAssigneeId] = useState(team.members[0]?.id ?? "");
+  const [assigneeName, setAssigneeName] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const progress = calculateProgress(tasks, 0);
 
   const updateTasks = (nextTasks) => {
 	setTasks(nextTasks);
 	saveProjectTasks(team, nextTasks);
   };
-
-  const getMemberId = (member) => String(member.userPk ?? member.id ?? member.name);
-  const selectedMember = team.members.find((member) => getMemberId(member) === String(assigneeId));
 
   const addTask = (e) => {
 	e.preventDefault();
@@ -520,12 +491,12 @@ export default function TeamDetailPage() {
 		{
 			id: Date.now(),
 			title,
-			assigneeId,
-			assigneeName: selectedMember?.name ?? "",
+			assigneeName: assigneeName.trim(),
 			checked: false,
 		}
 	]);
 	setTaskTitle("");
+	setAssigneeName("");
   };
 
   const toggleTask = (taskId) => {
@@ -538,7 +509,31 @@ export default function TeamDetailPage() {
 	updateTasks(tasks.filter((task) => task.id !== taskId));
   };
 
-  const scheduleGroups = buildScheduleGroups(team);
+  const startEditTask = (task) => {
+	setEditingTaskId(task.id);
+	setTaskTitle(task.title);
+	setAssigneeName(task.assigneeName || "");
+  };
+
+  const saveEditTask = (e) => {
+	e.preventDefault();
+	const title = taskTitle.trim();
+	if (!title || !editingTaskId) return;
+	updateTasks(tasks.map((task) => (
+		task.id === editingTaskId
+			? { ...task, title, assigneeName: assigneeName.trim() }
+			: task
+	)));
+	setEditingTaskId(null);
+	setTaskTitle("");
+	setAssigneeName("");
+  };
+
+  const cancelEditTask = () => {
+	setEditingTaskId(null);
+	setTaskTitle("");
+	setAssigneeName("");
+  };
 
   return (
     <>
@@ -616,7 +611,7 @@ export default function TeamDetailPage() {
 					<BottomWapper>
 						<TextWapper>
 							<VerticalLine />
-							<DescriptionText>프로젝트 업무</DescriptionText>
+							<DescriptionText>프로젝트 일정/구성</DescriptionText>
 						</TextWapper>
 						<ProgressSummary>
 							<ProgressLabel>진행률</ProgressLabel>
@@ -626,22 +621,26 @@ export default function TeamDetailPage() {
 							<ProgressValue>{progress}%</ProgressValue>
 						</ProgressSummary>
 						<TaskPanel>
-							<TaskForm onSubmit={addTask}>
+							<TaskForm onSubmit={editingTaskId ? saveEditTask : addTask}>
+								<TaskInput
+									value={assigneeName}
+									onChange={(e) => setAssigneeName(e.target.value)}
+									placeholder="담당자"
+									list="project-member-names"
+								/>
+								<datalist id="project-member-names">
+									{team.members.map((member) => (
+										<option key={member.userPk ?? member.id ?? member.name} value={member.name} />
+									))}
+								</datalist>
 								<TaskInput
 									value={taskTitle}
 									onChange={(e) => setTaskTitle(e.target.value)}
-									placeholder="업무 이름"
+									placeholder="담당 내용"
 								/>
-								<TaskSelect value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
-									<option value="">담당자 없음</option>
-									{team.members.map((member) => (
-										<option key={getMemberId(member)} value={getMemberId(member)}>
-											{member.name}
-										</option>
-									))}
-								</TaskSelect>
-								<AddTaskButton type="submit">추가</AddTaskButton>
+								<AddTaskButton type="submit">{editingTaskId ? "저장" : "추가"}</AddTaskButton>
 							</TaskForm>
+							{editingTaskId && <EmptyTaskText onClick={cancelEditTask} style={{ cursor: "pointer" }}>수정 취소</EmptyTaskText>}
 							<TaskList>
 								{tasks.length > 0 ? tasks.map((task) => (
 									<TaskItem key={task.id}>
@@ -650,8 +649,9 @@ export default function TeamDetailPage() {
 											$checked={task.checked}
 											onClick={() => toggleTask(task.id)}
 										/>
-										<TaskTitle $checked={task.checked}>{task.title}</TaskTitle>
 										<TaskAssignee>{task.assigneeName || "담당자 없음"}</TaskAssignee>
+										<TaskTitle $checked={task.checked}>{task.title}</TaskTitle>
+										<EditTaskButton type="button" onClick={() => startEditTask(task)}>수정</EditTaskButton>
 										<DeleteTaskButton type="button" onClick={() => deleteTask(task.id)}>×</DeleteTaskButton>
 									</TaskItem>
 								)) : (
@@ -659,65 +659,6 @@ export default function TeamDetailPage() {
 								)}
 							</TaskList>
 						</TaskPanel>
-					</BottomWapper>
-					<BottomWapper>
-						<TextWapper>
-							<VerticalLine />
-							<DescriptionText>프로젝트 일정/구성</DescriptionText>
-						</TextWapper>
-						<TeamBox>
-							{Object.keys(scheduleGroups).length === 0 && (
-								<EmptyDescriptionText>등록된 일정/구성이 없습니다.</EmptyDescriptionText>
-							)}
-							{Object.entries(scheduleGroups).map(([teamName, members], index) => (
-								<TeamWapper key={index}>
-									<NameWapper>
-										<TeamName>{teamName}</TeamName>
-									</NameWapper>
-									<TeamTextWapper>
-										<TitleText>참여자</TitleText>
-										<MemberWapper>
-											{/* 첫 두 명만 표시 */}
-											{members.slice(0, 2).map((member, i) => (
-												<TextIconWapper key={i}>
-													<MemberIcon src={user_icon} />
-													<MemberName>{member.name}</MemberName>
-												</TextIconWapper>
-											))}
-											{/* 3명 이상이면 +N 표시 */}
-											{members.length > 2 && (
-												<ExtraWapper>
-													<ExtraIcon src={extra_icon} />
-													<ExtraCount>{members.length - 2}</ExtraCount>
-												</ExtraWapper>
-											)}
-										</MemberWapper>
-									</TeamTextWapper>
-									<TeamTextWapper>
-										<TitleText>기한</TitleText>
-										<TeamDeadLineText>
-											{team.team_deadline?.find(d => d.join_team === teamName)?.deadline ?? "-"}
-										</TeamDeadLineText>
-									</TeamTextWapper>
-									<TeamTextWapper>
-										<TitleText>내용</TitleText>
-										<ContentWapper>
-											{team.team_explan
-											.filter((t) => {
-												const teams = Array.isArray(t.join_team)
-													? t.join_team
-													: String(t.join_team ?? "").split(",").map(t => t.trim());
-												return teams.includes(teamName);
-											})
-											.slice(0, 2)  /* ← 추가 */
-											.map((t, i) => (
-												<TeamContentText key={i}>{t.explan}</TeamContentText>
-											))}
-										</ContentWapper>
-									</TeamTextWapper>
-								</TeamWapper>
-							))}
-						</TeamBox>
 					</BottomWapper>
 				</Wapper>
         	</ContentBox>

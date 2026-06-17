@@ -68,6 +68,7 @@ import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
 import { apiRequest, mapApiTeam } from "../utils/api";
 import { formatTeamPeriod, formatToday } from "../utils/teamDisplay";
+import { calculateProgress, loadProjectTasks, saveProjectTasks } from "../utils/projectTasks";
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -321,6 +322,125 @@ const TeamContentInput = styled.input`
     border-bottom: ${({ $isNew }) => $isNew ? "1px solid #000" : "none"};
 `;
 
+const ProgressSummary = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: 3.5%;
+    margin-bottom: 18px;
+`;
+const ProgressLabel = styled.span`
+    color: var(--Gray-7, #70716F);
+    font-size: 18px;
+    font-weight: 600;
+`;
+const ProgressTrack = styled.div`
+    width: 360px;
+    height: 8px;
+    border-radius: 999px;
+    background: #E0E0E0;
+    overflow: hidden;
+`;
+const ProgressFill = styled.div`
+    width: ${({ $progress }) => $progress}%;
+    height: 100%;
+    border-radius: 999px;
+    background: #C0DA58;
+`;
+const ProgressValue = styled.span`
+    color: #000;
+    font-size: 18px;
+    font-weight: 600;
+`;
+const TaskPanel = styled.div`
+    margin-left: 3%;
+    width: min(900px, 86%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+`;
+const TaskForm = styled.form`
+    display: grid;
+    grid-template-columns: 180px minmax(260px, 1fr) 96px;
+    gap: 10px;
+    align-items: center;
+`;
+const TaskInput = styled.input`
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid #C9C9C8;
+    padding: 0 14px;
+    font-size: 16px;
+    outline: none;
+
+    &:focus {
+        border-color: #C0DA58;
+        box-shadow: 0 0 0 3px rgba(192, 218, 88, 0.18);
+    }
+`;
+const TaskActionButton = styled.button`
+    height: 44px;
+    border: none;
+    border-radius: 8px;
+    background: #C0DA58;
+    color: #FFF;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+`;
+const TaskList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
+const TaskItem = styled.div`
+    display: grid;
+    grid-template-columns: 28px 140px minmax(220px, 1fr) 44px 44px;
+    gap: 12px;
+    align-items: center;
+    min-height: 52px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #FFF;
+    box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+`;
+const TaskCheckButton = styled.button`
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: ${({ $checked }) => $checked ? "#C0DA58" : "#E0E0E0"};
+    cursor: pointer;
+`;
+const TaskAssignee = styled.span`
+    color: #70716F;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+const TaskTitle = styled.span`
+    color: ${({ $checked }) => $checked ? "#70716F" : "#000"};
+    font-size: 17px;
+    font-weight: 500;
+    text-decoration: ${({ $checked }) => $checked ? "line-through" : "none"};
+`;
+const SmallTaskButton = styled.button`
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #F8F8F8;
+    color: #70716F;
+    font-size: ${({ $large }) => $large ? "18px" : "14px"};
+    cursor: pointer;
+`;
+const EmptyTaskText = styled.span`
+    color: #70716F;
+    font-size: 16px;
+    padding: 8px 0;
+`;
+
 const getPeriodParts = (period) => {
     const text = String(period || "").trim();
     if (!text) return [formatToday(), ""];
@@ -428,45 +548,69 @@ export default function TeamDetailCreatePage(){
     const [inviteOpen, setInviteOpen] = useState(false);
     const [invitableFriends, setInvitableFriends] = useState([]);
     const [inviteError, setInviteError] = useState("");
+    const [tasks, setTasks] = useState(() => loadProjectTasks(team));
+    const [taskTitle, setTaskTitle] = useState("");
+    const [taskAssignee, setTaskAssignee] = useState("");
+    const [editingTaskId, setEditingTaskId] = useState(null);
+    const progress = calculateProgress(tasks, 0);
 
-    const [teamGroups, setTeamGroups] = useState(() => buildInitialGroups(team));
+    const updateTasks = (nextTasks) => {
+        setTasks(nextTasks);
+        saveProjectTasks(team, nextTasks);
+    };
+    
+    const addTask = (e) => {
+        e.preventDefault();
+        const title = taskTitle.trim();
+        if (!title) return;
+        updateTasks([
+            ...tasks,
+            {
+                id: Date.now(),
+                title,
+                assigneeName: taskAssignee.trim(),
+                checked: false,
+            }
+        ]);
+        setTaskTitle("");
+        setTaskAssignee("");
+    };
 
-    useEffect(() => {
-        setTeamGroups(buildInitialGroups({ ...team, members, description }));
-    }, [members]);
-    
-    const AddTeam = () => {
-        const newTeamName = `새 팀 ${Object.keys(teamGroups).length + 1}`;
-        setTeamGroups(prev => ({ 
-            ...prev, 
-            [newTeamName]: { members: [], period: "", explan: [""], isNew: true }  /* ← isNew 추가 */
-        }));
+    const startEditTask = (task) => {
+        setEditingTaskId(task.id);
+        setTaskTitle(task.title);
+        setTaskAssignee(task.assigneeName || "");
     };
-    
-    const RenameTeam = (oldName, newName) => {
-        if (!newName || oldName === newName) return;
-        setTeamGroups(prev => {
-            const updated = {};
-            Object.entries(prev).forEach(([key, val]) => {
-                updated[key === oldName ? newName : key] = val;
-            });
-            return updated;
-        });
+
+    const saveEditTask = (e) => {
+        e.preventDefault();
+        const title = taskTitle.trim();
+        if (!title || !editingTaskId) return;
+        updateTasks(tasks.map((task) => (
+            task.id === editingTaskId
+                ? { ...task, title, assigneeName: taskAssignee.trim() }
+                : task
+        )));
+        setEditingTaskId(null);
+        setTaskTitle("");
+        setTaskAssignee("");
     };
-    
-    const UpdatePeriod = (teamName, value) => {
-        setTeamGroups(prev => ({
-            ...prev,
-            [teamName]: { ...prev[teamName], period: value }
-        }));
+
+    const cancelEditTask = () => {
+        setEditingTaskId(null);
+        setTaskTitle("");
+        setTaskAssignee("");
     };
-    
-    const UpdateExplan = (teamName, index, value) => {
-        setTeamGroups(prev => {
-            const updated = [...prev[teamName].explan];
-            updated[index] = value;
-            return { ...prev, [teamName]: { ...prev[teamName], explan: updated } };
-        });
+
+    const toggleTask = (taskId) => {
+        updateTasks(tasks.map((task) => (
+            task.id === taskId ? { ...task, checked: !task.checked } : task
+        )));
+    };
+
+    const deleteTask = (taskId) => {
+        updateTasks(tasks.filter((task) => task.id !== taskId));
+        if (editingTaskId === taskId) cancelEditTask();
     };
 
     const DeleteMember = (index) => {
@@ -670,75 +814,53 @@ export default function TeamDetailCreatePage(){
                             <TextWapper>
                                 <VerticalLine />
                                 <DescriptionText>프로젝트 일정/구성</DescriptionText>
-                                <IconWapper $size={30} onClick={AddTeam} >
-                                    <AddIcon src={add_icon} />
-                                </IconWapper>
                             </TextWapper>
-                            <TeamBox>
-                                {Object.keys(teamGroups).length === 0 && (
-                                    <EmptyText>등록된 일정/구성이 없습니다.</EmptyText>
-                                )}
-                                {Object.entries(teamGroups).map(([teamName, group], index) => (
-                                    <TeamWapper key={index}>
-                                        <NameWapper>
-                                            <TeamNameInput
-                                                defaultValue={teamName}
-                                                onBlur={(e) => RenameTeam(teamName, e.target.value)}
+                            <ProgressSummary>
+                                <ProgressLabel>진행률</ProgressLabel>
+                                <ProgressTrack>
+                                    <ProgressFill $progress={progress} />
+                                </ProgressTrack>
+                                <ProgressValue>{progress}%</ProgressValue>
+                            </ProgressSummary>
+                            <TaskPanel>
+                                <TaskForm onSubmit={editingTaskId ? saveEditTask : addTask}>
+                                    <TaskInput
+                                        value={taskAssignee}
+                                        onChange={(e) => setTaskAssignee(e.target.value)}
+                                        placeholder="담당자"
+                                        list="team-member-names"
+                                    />
+                                    <datalist id="team-member-names">
+                                        {members.map((member) => (
+                                            <option key={member.userPk ?? member.id ?? member.name} value={member.name} />
+                                        ))}
+                                    </datalist>
+                                    <TaskInput
+                                        value={taskTitle}
+                                        onChange={(e) => setTaskTitle(e.target.value)}
+                                        placeholder="담당 내용"
+                                    />
+                                    <TaskActionButton type="submit">{editingTaskId ? "저장" : "추가"}</TaskActionButton>
+                                </TaskForm>
+                                {editingTaskId && <EmptyTaskText onClick={cancelEditTask} style={{ cursor: "pointer" }}>수정 취소</EmptyTaskText>}
+                                <TaskList>
+                                    {tasks.length > 0 ? tasks.map((task) => (
+                                        <TaskItem key={task.id}>
+                                            <TaskCheckButton
+                                                type="button"
+                                                $checked={task.checked}
+                                                onClick={() => toggleTask(task.id)}
                                             />
-                                        </NameWapper>
-                                        <TeamTextWapper>
-                                            <TitleText>참여자</TitleText>
-                                            <MemberWapper>
-                                                {group.members.slice(0, 2).map((member, i) => (
-                                                    <TextIconWapper key={i}>
-                                                        <MemberIcon src={user_icon} />
-                                                        <MemberName>{member.name}</MemberName>
-                                                    </TextIconWapper>
-                                                ))}
-                                                {group.members.length > 2 && (
-                                                    <ExtraWapper>
-                                                        <ExtraIcon src={extra_icon} />
-                                                        <ExtraCount>{group.members.length - 2}</ExtraCount>
-                                                    </ExtraWapper>
-                                                )}
-                                            </MemberWapper>
-                                        </TeamTextWapper>
-                                        <TeamTextWapper>
-                                            <TitleText>기한</TitleText>
-                                            {group.isNew ? (
-                                                <TeamDeadLineInput
-                                                    $isNew={group.isNew}
-                                                    value={group.period}
-                                                    onChange={(e) => UpdatePeriod(teamName, e.target.value)}
-                                                />
-                                            ) : (
-                                                <TeamDeadLineInput value={group.period}
-                                                    onChange={(e) => UpdatePeriod(teamName, e.target.value)} />
-                                            )}
-                                        </TeamTextWapper>
-                                        <TeamTextWapper>
-                                            <TitleText>내용</TitleText>
-                                            <ContentWapper>
-                                                {group.isNew ? (
-                                                    group.explan.slice(0, 2).map((explan, i) => (
-                                                        <TeamContentInput
-                                                            $isNew={group.isNew}
-                                                            key={i}
-                                                            value={explan}
-                                                            onChange={(e) => UpdateExplan(teamName, i, e.target.value)}
-                                                        />
-                                                    ))
-                                                ) : (
-                                                    group.explan.slice(0, 2).map((explan, i) => (
-                                                        <TeamContentInput key={i} value={explan}
-                                                            onChange={(e) => UpdateExplan(teamName, i, e.target.value)} />
-                                                    ))
-                                                )}
-                                            </ContentWapper>
-                                        </TeamTextWapper>
-                                    </TeamWapper>
-                                ))}
-                            </TeamBox>
+                                            <TaskAssignee>{task.assigneeName || "담당자 없음"}</TaskAssignee>
+                                            <TaskTitle $checked={task.checked}>{task.title}</TaskTitle>
+                                            <SmallTaskButton type="button" onClick={() => startEditTask(task)}>수정</SmallTaskButton>
+                                            <SmallTaskButton $large type="button" onClick={() => deleteTask(task.id)}>×</SmallTaskButton>
+                                        </TaskItem>
+                                    )) : (
+                                        <EmptyTaskText>등록된 업무가 없습니다.</EmptyTaskText>
+                                    )}
+                                </TaskList>
+                            </TaskPanel>
                         </BottomWapper>
                     </Wapper>
                 </ContentBox>

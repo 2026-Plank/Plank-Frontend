@@ -5,7 +5,7 @@ export const getTeamKey = (team = {}) => {
 export const normalizeTasks = (tasks = []) => {
   return tasks.map((task, index) => ({
     id: task.id ?? Date.now() + index,
-    title: task.title ?? task.text ?? "",
+    title: task.title ?? task.content ?? task.text ?? "",
     assigneeId: task.assigneeId ?? task.assignee?.id ?? "",
     assigneeName: task.assigneeName ?? task.assignee?.name ?? "",
     checked: Boolean(task.checked ?? task.done ?? task.completed),
