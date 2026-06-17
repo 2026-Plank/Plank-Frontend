@@ -2,6 +2,7 @@ import logo from '../assets/logo.svg';
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { apiRequest } from '../utils/api';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -19,6 +20,9 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    padding: 0 20px; /* ★ 모바일 화면 좌우 최소 안전 마진 확보 */
+    box-sizing: border-box;
 `
 
 const Logo = styled.img`
@@ -26,22 +30,32 @@ const Logo = styled.img`
     height: 136px;
     margin-top: 5%;
     margin-bottom: 50px;
+
+    @media (max-width: 480px) {
+        width: 200px; /* 모바일 전용 로고 축소 */
+        height: auto;
+        margin-top: 40px;
+        margin-bottom: 60px;
+    }
 `
 
 const InputWrapper = styled.div`
     position: relative;
-    width: 538px;
+    width: 100%; /* ★ 고정 너비 해제 */
+    max-width: 538px; /* 데스크톱 최대 너비 제한 */
     margin-top: 30px;
     border-radius: 16px;
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
     transition: all 0.2s ease;
+    box-sizing: border-box;
 
     &:focus-within {
         box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.5);
     }
 
-    &:focus-within label {
-        color: #C0DA58;
+    @media (max-width: 480px) {
+        margin-top: 16px;
+        border-radius: 12px;
     }
 `
 
@@ -54,6 +68,13 @@ const Input = styled.input`
     font-size: 22px;
     padding: 25px;
     background: transparent;
+
+    @media (max-width: 480px) {
+        height: 60px; /* ★ 모바일 맞춤 슬림 크기 */
+        font-size: 16px;
+        padding: 16px;
+        border-radius: 12px;
+    }
 `
 
 const Label = styled.label`
@@ -65,6 +86,11 @@ const Label = styled.label`
     font-size: 16px;
     pointer-events: none;
     transition: all 0.2s ease;
+
+    @media (max-width: 480px) {
+        left: 16px;
+        font-size: 14px;
+    }
 `
 
 const FloatingWrapper = styled(InputWrapper)`
@@ -73,10 +99,20 @@ const FloatingWrapper = styled(InputWrapper)`
         top: 15px;
         font-size: 12px;
     }
+
+    @media (max-width: 480px) {
+        /* ★ 축소된 인풋 높이에 어울리도록 라벨 플로팅 축소 */
+        input:focus + label,
+        input:not(:placeholder-shown) + label {
+            top: 8px;
+            font-size: 10px;
+        }
+    }
 `
 
 const LoginButton = styled.button`
-    width: 538px;
+    width: 100%; /* ★ 고정 너비 해제 */
+    max-width: 538px;
     height: 90px;
     border-radius: 16px;
     margin-top: 30px;
@@ -85,6 +121,15 @@ const LoginButton = styled.button`
     background-color: ${({ disabled }) => disabled ? '#ccc' : '#C0DA58'};
     border: none;
     cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s;
+
+    @media (max-width: 480px) {
+        height: 56px; /* ★ 모바일 가독성 및 터치 영역 최적화 */
+        font-size: 18px;
+        border-radius: 12px;
+        margin-top: 40px;
+    }
 `
 
 const LoginLink = styled(Link)`
@@ -95,6 +140,11 @@ const LoginLink = styled(Link)`
 
     &:hover {
         text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 14px;
+        margin-top: 16px;
     }
 `
 
@@ -118,17 +168,30 @@ export default function Signup() {
         return '';
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const err = validate();
         if (err) {
             alert(err);
             return;
         }
 
-        alert('회원가입 성공');
-        // setTimeout(() => {
+        try {
+            const res = await apiRequest('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    userid: id,
+                    name: id,
+                }),
+            });
+            alert('회원가입 성공');
             navigate('/');
-        // }, 500); // 텀 줘도 됨 
+        } catch (err) {
+            alert('회원가입 실패');
+            console.error(err);
+        }
     };
 
     const isDisabled = !email || !id || !password;
@@ -175,5 +238,5 @@ export default function Signup() {
                 <LoginLink to="/">로그인</LoginLink>
             </Container>
         </>
-    )
+    );
 }
