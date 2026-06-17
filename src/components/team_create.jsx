@@ -7,6 +7,7 @@ import { useState } from "react";
 import Backbtn from '../assets/back-button.svg';
 import logo from '../assets/logo.svg';
 import { GlobalStyle } from "../pages/homePage";
+import { formatToday } from "../utils/teamDisplay";
 
 //css
 export const Container = styled.div`
@@ -144,6 +145,12 @@ export default function TeamCreate(){
 
     const [teamName, setTeamName] = useState("");
     const [endDate, setDate] = useState("");
+    const buildPeriod = (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) return "";
+        if (/[-~]/.test(trimmed)) return trimmed;
+        return `${formatToday()} ~ ${trimmed}`;
+    };
 
     //일정 입력 통일되게 맞추는 함수
     const formatPeriod = (value) => {
@@ -183,7 +190,7 @@ export default function TeamCreate(){
                 team: {
                     id: null,
                     title: teamName,
-                    period: endDate,
+                    period: buildPeriod(endDate),
                     code: randomCode,
                     charge: "",
                     members: [],

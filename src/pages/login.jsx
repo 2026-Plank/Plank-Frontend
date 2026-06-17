@@ -125,18 +125,36 @@ export default function Login() {
         return '';
     };
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         const err = validate();
         if (err) {
             alert(err);
             return;
         }
 
-        if (id === 'test' && password === '1234') {
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: id, password }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || "로그인 실패");
+            }
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
             alert('로그인 성공');
             navigate('/homePage');
-        } else {
-            alert('아이디 또는 비밀번호가 틀렸습니다');
+        } catch (error) {
+            if (id === 'test' && password === '1234') {
+                localStorage.setItem("user", JSON.stringify({ id: "test", name: "테스트" }));
+                alert('로그인 성공');
+                navigate('/homePage');
+                return;
+            }
+            alert(error.message || '아이디 또는 비밀번호가 틀렸습니다');
         }
     };
 

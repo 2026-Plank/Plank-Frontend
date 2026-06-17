@@ -278,6 +278,7 @@ export default function TeamDetailCreatePage(){
     const [editingCharge, setEditingCharge] = useState(false);
     const [editingCode, setEditingCode] = useState(false);
     const [chargeWidth, setChargeWidth] = useState(0);
+    const [codeWidth, setCodeWidth] = useState(100);
     const chargeRef = useRef(null);
     const codeRef = useRef(null);
 

@@ -1,6 +1,6 @@
 //packages
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 //assets
 import plank_logo from "../assets/logo.svg";
@@ -60,6 +60,8 @@ const RoleCard = styled.div`
     background: var(--Gray-3, #F8F8F8);
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
     cursor: pointer;
+    border-color: ${({ $active }) => $active ? "#C0DA58" : "var(--Gray-5, #C9C9C8)"};
+    background: ${({ $active }) => $active ? "#FFF" : "var(--Gray-3, #F8F8F8)"};
 
     &:hover{
         border-radius: 20px;
@@ -103,12 +105,44 @@ const RoleInput = styled.input`
 
 export default function TeamSelectPage(){
     const navigate = useNavigate();
+    const location = useLocation();
 
     const roles = ["개발자", "디자이너", "기획자"]; // API에서 받아온 데이터로 교체
     const [selectedRole, setSelectedRole] = useState(null);
     const [details, setDetails] = useState(
         Object.fromEntries(roles.map((role) => [role, ""]))
     );
+    const teamId = location.state?.teamId ?? location.state?.team?.id;
+
+    const saveSelection = async () => {
+        if (!selectedRole) {
+            alert("부서를 선택해 주세요!");
+            return;
+        }
+
+        const jobDetail = details[selectedRole].trim();
+        const payload = { department: selectedRole, jobDetail };
+
+        localStorage.setItem("plank-last-team-role", JSON.stringify(payload));
+
+        if (teamId) {
+            const token = localStorage.getItem("token");
+            try {
+                await fetch(`/api/teams/${teamId}/members/me/department`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify(payload),
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        navigate("/project");
+    };
 
     return(
         <>
@@ -132,7 +166,7 @@ export default function TeamSelectPage(){
                                 >
                                     <RoleTitle>{role}</RoleTitle>
                                     <RoleInput
-                                        placeholder="상세 직무 입력"
+                                        placeholder="맡을 업무 내용"
                                         value={details[role]}
                                         onChange={(e) => setDetails(prev => ({ ...prev, [role]: e.target.value }))}
                                         onClick={(e) => e.stopPropagation()}
@@ -140,7 +174,7 @@ export default function TeamSelectPage(){
                                 </RoleCard>
                             ))}
                         </RoleBox>
-                        <SumbitButton type="submit">선택 완료</SumbitButton>
+                        <SumbitButton type="button" onClick={saveSelection}>선택 완료</SumbitButton>
                     </MainWapper>
                 </Container>
             </Wapper>

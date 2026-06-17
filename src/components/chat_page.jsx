@@ -340,6 +340,43 @@ export const states = [
     { color: "B9B9B9", label: "오프라인", value: "OFFLINE"},
 ];
 
+const LOCAL_CHAT_KEY = "plank-local-chat-messages";
+
+const getToken = () => localStorage.getItem("token");
+
+const getCurrentUser = () => {
+    try {
+        return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+        return {};
+    }
+};
+
+const formatMessageTime = (value = new Date()) => {
+    const date = new Date(value);
+    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+};
+
+const mapApiMessage = (message, currentUserId) => ({
+    id: message.id,
+    text: message.message,
+    isMine: Number(message.senderId) === Number(currentUserId),
+    time: formatMessageTime(message.timestamp),
+});
+
+const loadLocalMessages = () => {
+    try {
+        return JSON.parse(localStorage.getItem(LOCAL_CHAT_KEY) || "{}");
+    } catch {
+        return {};
+    }
+};
+
+const saveLocalMessages = (messages) => {
+    localStorage.setItem(LOCAL_CHAT_KEY, JSON.stringify(messages));
+    window.dispatchEvent(new CustomEvent("plank-local-chat-sync", { detail: messages }));
+};
+
 export default function ChatPage(){
     const navigate = useNavigate();
     const location = useLocation();
@@ -387,30 +424,185 @@ export default function ChatPage(){
     // selectedChat도 삭제된 항목이면 첫번째로 초기화
     const [selectedChat, setSelectedChat] = useState(chatList[0]);
 
-    const [allMessages, setAllMessages] = useState({
+    const [allMessages, setAllMessages] = useState(() => {
+        const saved = loadLocalMessages();
+        if (Object.keys(saved).length) return saved;
+        return {
         1: [{ id: 1, text: "안녕하세요!", isMine: false, time: "2:15 PM" }],
         2: [{ id: 1, text: "회의 언제예요?", isMine: false, time: "2:15 PM" }],
         3: [{ id: 1, text: "네", isMine: false, time: "2:15 PM" }],
         4: [{ id: 1, text: "감사합니다", isMine: false, time: "2:15 PM" }],
-    });
+    }});
 
     const chatBoxRef = useRef();
+    const token = getToken();
+    const currentUser = getCurrentUser();
+    const currentUserId = currentUser.id;
 
     useEffect(() => {
         if(chatBoxRef.current){
             chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
         }
     }, [allMessages, selectedChat]);
-    
-    const SendChat = () => {
-        if(sendChat.trim() === "") return;
-        const now = new Date();
-        const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-        setAllMessages(prev => ({
-            ...prev,
-            [selectedChat.id]: [...(prev[selectedChat.id] || []), { id: Date.now(), text: sendChat, isMine: true, time }]
+
+    const loadConversations = async () => {
+        if (!token) return;
+        const res = await fetch("/api/chats/conversations", {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const direct = (data.conversations || []).map((item) => ({
+            id: item.userId,
+            apiType: "direct",
+            name: item.name,
+            charge: "개인",
+            lastMsg: item.lastMessage || "",
+            time: item.lastTimestamp ? formatMessageTime(item.lastTimestamp) : "",
+            state: item.presenceStatus || "OFFLINE",
         }));
+        const groups = (data.groups || []).map((item) => ({
+            id: item.groupId,
+            apiType: "group",
+            name: item.name,
+            charge: "그룹",
+            lastMsg: item.lastMessage || "",
+            time: item.lastTimestamp ? formatMessageTime(item.lastTimestamp) : "",
+            state: "ONLINE",
+        }));
+        const nextList = [...direct, ...groups];
+        if (!nextList.length) return;
+
+        setChatList(nextList);
+        setSelectedChat((prev) => nextList.find((item) => item.id === prev?.id && item.apiType === prev?.apiType) || nextList[0]);
+    };
+
+    const loadMessages = async (chatTarget = selectedChat) => {
+        if (!token || !chatTarget) return;
+        const url = chatTarget.apiType === "group"
+            ? `/api/chats/groups/${chatTarget.id}/messages`
+            : `/api/chats/${chatTarget.id}`;
+        const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setAllMessages((prev) => ({
+            ...prev,
+            [chatTarget.id]: data.map((message) => mapApiMessage(message, currentUserId)),
+        }));
+    };
+
+    useEffect(() => {
+        loadConversations();
+    }, []);
+
+    useEffect(() => {
+        loadMessages(selectedChat);
+    }, [selectedChat?.id, selectedChat?.apiType]);
+
+    useEffect(() => {
+        if (!token) return;
+
+        const events = new EventSource(`/api/chats/events?token=${encodeURIComponent(token)}`);
+        const handleMessage = (event) => {
+            const message = JSON.parse(event.data);
+            const targetId = message.groupId || (Number(message.senderId) === Number(currentUserId) ? message.receiverId : message.senderId);
+
+            setAllMessages((prev) => {
+                const current = prev[targetId] || [];
+                if (current.some((item) => item.id === message.id)) return prev;
+                return {
+                    ...prev,
+                    [targetId]: [...current, mapApiMessage(message, currentUserId)],
+                };
+            });
+            setChatList((prev) => prev.map((item) => (
+                Number(item.id) === Number(targetId)
+                    ? { ...item, lastMsg: message.message, time: formatMessageTime(message.timestamp) }
+                    : item
+            )));
+        };
+
+        events.addEventListener("chat:message", handleMessage);
+        events.addEventListener("chat:group-message", handleMessage);
+
+        const interval = setInterval(() => {
+            loadMessages(selectedChat);
+            loadConversations();
+        }, 3000);
+
+        return () => {
+            events.close();
+            clearInterval(interval);
+        };
+    }, [token, selectedChat?.id, selectedChat?.apiType, currentUserId]);
+
+    useEffect(() => {
+        if (token) return;
+
+        const sync = (event) => {
+            setAllMessages(event.detail || loadLocalMessages());
+        };
+        const storageSync = (event) => {
+            if (event.key === LOCAL_CHAT_KEY) setAllMessages(loadLocalMessages());
+        };
+
+        window.addEventListener("plank-local-chat-sync", sync);
+        window.addEventListener("storage", storageSync);
+        return () => {
+            window.removeEventListener("plank-local-chat-sync", sync);
+            window.removeEventListener("storage", storageSync);
+        };
+    }, [token]);
+    
+    const SendChat = async () => {
+        if(sendChat.trim() === "") return;
+        const text = sendChat.trim();
         setSendChat("");
+
+        if (token && selectedChat?.apiType) {
+            const url = selectedChat.apiType === "group"
+                ? `/api/chats/groups/${selectedChat.id}/messages`
+                : "/api/chats";
+            const body = selectedChat.apiType === "group"
+                ? { message: text }
+                : { receiverId: selectedChat.id, message: text };
+
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const chat = data.chat;
+                setAllMessages(prev => {
+                    const current = prev[selectedChat.id] || [];
+                    if (current.some((item) => item.id === chat.id)) return prev;
+                    return {
+                        ...prev,
+                        [selectedChat.id]: [...current, mapApiMessage(chat, currentUserId)]
+                    };
+                });
+                setChatList(prev => prev.map(item => item.id === selectedChat.id ? { ...item, lastMsg: text, time: formatMessageTime(chat.timestamp) } : item));
+            }
+            return;
+        }
+
+        const now = new Date();
+        const time = formatMessageTime(now);
+        const nextMessages = {
+            ...allMessages,
+            [selectedChat.id]: [...(allMessages[selectedChat.id] || []), { id: Date.now(), text, isMine: true, time }]
+        };
+        setAllMessages(nextMessages);
+        saveLocalMessages(nextMessages);
+        setChatList(prev => prev.map(item => item.id === selectedChat.id ? { ...item, lastMsg: text, time: "방금" } : item));
     };
 
     return(

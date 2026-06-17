@@ -39,6 +39,8 @@ import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
+import { formatTeamCharge, formatTeamPeriod } from "../utils/teamDisplay";
+import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
 
 const HeaderBar = styled.header`
   display: flex;
@@ -332,6 +334,11 @@ export default function TeamPage() {
       charge: "팀 프로젝트",
       progress: 65,
       description: "프로젝트 설명",
+      team_tasks: [
+        { id: 1, title: "아이디어 제작", assigneeName: "윤건", checked: true },
+        { id: 2, title: "프로토타입 제작", assigneeName: "박재영", checked: false },
+        { id: 3, title: "디자인 제작", assigneeName: "박미주", checked: false },
+      ],
       members: [
         {name: "윤건", join_team: ["기획자","개발자"]},
         {name: "장시후", join_team: ["기획자", "개발자"]},
@@ -361,6 +368,9 @@ export default function TeamPage() {
       period: "04/01 - 07/01",
       charge: "백엔드 개발",
       progress: 30,
+      team_tasks: [
+        { id: 4, title: "API 명세 작성", assigneeName: "", checked: false },
+      ],
       hidden: false
     },
   ]);
@@ -430,7 +440,11 @@ export default function TeamPage() {
             </JoinButton>
           </HeaderBar>
           <TeamBox>
-            {visibleTeams.map((team) => (
+            {visibleTeams.map((team) => {
+              const projectTasks = loadProjectTasks(team);
+              const progress = calculateProgress(projectTasks, 0);
+
+              return (
               <TeamBarContainer key={team.id}>
                 <Wapper>
                   <EllipsisIcon
@@ -470,18 +484,18 @@ export default function TeamPage() {
                   <TeamBarTitle>{team.title}</TeamBarTitle>
                   <DetailBox>
                     <PeriodText>기간</PeriodText>
-                    <TeamDetailText>{team.period}</TeamDetailText>
+                    <TeamDetailText>{formatTeamPeriod(team)}</TeamDetailText>
                   </DetailBox>
                   <DetailBox>
                     <ChargeText>담당</ChargeText>
-                    <TeamDetailText>{team.charge}</TeamDetailText>
+                    <TeamDetailText>{formatTeamCharge(team) || "-"}</TeamDetailText>
                   </DetailBox>
                 </TextBox>
 
-                <ProgressText>{team.progress}%</ProgressText>
+                <ProgressText>{progress}%</ProgressText>
                 <BarWapper>
                   <ProgressBar>
-                    <BarFill $progress={team.progress} />
+                    <BarFill $progress={progress} />
                   </ProgressBar>
                 </BarWapper>
 
@@ -489,7 +503,7 @@ export default function TeamPage() {
                   자세히 보기
                 </DetailText>
               </TeamBarContainer>
-            ))}
+            )})}
           </TeamBox>
           <HideWapper onClick={() => setShowHidden((prev) => !prev)}>
               <HideText>숨김 ({hiddenCount})</HideText>

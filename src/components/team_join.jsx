@@ -60,14 +60,16 @@ export default function TeamJoin() {
         }
         
         try{
-            const res = await fetch("host이름/join", {
+            const token = localStorage.getItem("token");
+            const res = await fetch("/api/teams/join", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify({
                     teamName,
-                    teamCode
+                    inviteCode: teamCode
                 }),
             });
 
@@ -75,8 +77,10 @@ export default function TeamJoin() {
                 console.log("팀 참가 실패!");
                 alert("팀 참가 실패");
             }else{
+                const data = await res.json();
                 console.log("팀 참가 완료!");
                 alert("팀 참가 성공");
+                navigate("/team-select", { state: { team: data.team, teamId: data.team?.id } });
             }
         }catch(err){
             console.error(err);
