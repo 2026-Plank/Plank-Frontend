@@ -33,12 +33,17 @@ export const apiRequest = async (path, options = {}) => {
     try {
       data = JSON.parse(text);
     } catch {
-      data = { message: text };
+      const looksLikeHtml = /^\s*</.test(text);
+      data = {
+        message: looksLikeHtml
+          ? "API 서버 응답이 아니라 프론트 페이지가 반환되었습니다. Vercel 환경변수 VITE_API_BASE_URL에 백엔드 주소를 설정해 주세요."
+          : text
+      };
     }
   }
 
-  if (!response.ok) {
-    const message = data?.error || data?.message || "요청 처리 중 오류가 발생했습니다.";
+  if (!response.ok || !data) {
+    const message = data?.error || data?.message || "서버에서 빈 응답을 받았습니다.";
     const error = new Error(message);
     error.status = response.status;
     error.data = data;

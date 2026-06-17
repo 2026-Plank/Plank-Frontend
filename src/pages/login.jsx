@@ -2,6 +2,7 @@ import logo from '../assets/logo.svg';
 import styled, { createGlobalStyle } from "styled-components";
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { apiRequest, setAuthSession } from '../utils/api';
 
 export const GlobalStyle = createGlobalStyle`
     *{
@@ -133,18 +134,12 @@ export default function Login() {
         }
 
         try {
-            const res = await fetch("/api/auth/login", {
+            const data = await apiRequest("/api/auth/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId: id, password }),
             });
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.message || "로그인 실패");
-            }
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            setAuthSession({ token: data.token, user: data.user });
             alert('로그인 성공');
             navigate('/homePage');
         } catch (error) {
