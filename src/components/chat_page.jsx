@@ -353,6 +353,12 @@ const getCurrentUser = () => {
     }
 };
 
+const normalizeProfileInfo = (user = {}) => ({
+    name: user.name || user.userid || user.userId || user.email || "사용자",
+    job: user.job || user.department || user.statusMessage || "프로필",
+    presenceStatus: user.presenceStatus,
+});
+
 const formatMessageTime = (value = new Date()) => {
     const date = new Date(value);
     return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
@@ -400,6 +406,7 @@ export default function ChatPage(){
 
     const [openMenu, setOpenMenu] = useState(false);
     const [currentState, setCurrentState] = useState(states[0]);
+    const [profileInfo, setProfileInfo] = useState(() => normalizeProfileInfo(getCurrentUser()));
     const menuRef = useRef();
 
     useEffect(() => {
@@ -444,6 +451,28 @@ export default function ChatPage(){
     const chatBoxRef = useRef();
     const currentUser = getCurrentUser();
     const currentUserId = currentUser.id;
+
+    useEffect(() => {
+        const storedUser = getCurrentUser();
+        setProfileInfo(normalizeProfileInfo(storedUser));
+
+        if (!token) return;
+
+        apiRequest("/api/users/profile")
+            .then((profile) => {
+                if (!profile) return;
+
+                const nextUser = { ...storedUser, ...profile };
+                localStorage.setItem("user", JSON.stringify(nextUser));
+                setProfileInfo(normalizeProfileInfo(nextUser));
+
+                const nextState = states.find((state) => state.value === nextUser.presenceStatus);
+                if (nextState) setCurrentState(nextState);
+            })
+            .catch(() => {
+                setProfileInfo(normalizeProfileInfo(storedUser));
+            });
+    }, [token]);
 
     useEffect(() => {
         if(chatBoxRef.current){
@@ -645,8 +674,8 @@ export default function ChatPage(){
                                 <InfoWapper>
                                     <UserIcon $size={126} src={user_icon} />
                                     <NameWapper>
-                                        <NameText>이민지</NameText>
-                                        <UserCharge>디자이너</UserCharge>
+                                        <NameText>{profileInfo.name}</NameText>
+                                        <UserCharge>{profileInfo.job}</UserCharge>
                                     </NameWapper>
                                     <StateBox onClick={() => setOpenMenu(prev => !prev)}>
                                         <StateDot $color={currentState.color} />
