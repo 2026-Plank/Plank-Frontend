@@ -39,7 +39,7 @@ import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
-import { formatTeamCharge, formatTeamPeriod } from "../utils/teamDisplay";
+import { formatTeamPeriod } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
 import { apiRequest, mapApiTeam } from "../utils/api";
 
@@ -317,6 +317,19 @@ const EmptyText = styled.p`
   font-size: 16px;
 `;
 
+const fetchTeamDetail = async (team) => {
+  if (!team?.id) return team;
+  try {
+    const data = await apiRequest(`/api/teams/${team.id}`);
+    return mapApiTeam(data.team || team);
+  } catch {
+    return team;
+  }
+};
+
+const rememberSelectedTeam = (team) => {
+  sessionStorage.setItem("plank-selected-team", JSON.stringify(team));
+};
 
 export default function TeamPage() {
   const navigate = useNavigate();
@@ -349,7 +362,9 @@ export default function TeamPage() {
       setLoading(true);
       try {
         const data = await apiRequest("/api/teams");
-        setTeams((data.teams || []).map(mapApiTeam));
+        const baseTeams = (data.teams || []).map(mapApiTeam);
+        const detailedTeams = await Promise.all(baseTeams.map(fetchTeamDetail));
+        setTeams(detailedTeams);
         setError("");
       } catch (err) {
         setError(err.message || "프로젝트를 불러오지 못했습니다.");
@@ -380,6 +395,18 @@ export default function TeamPage() {
       prev.map((t) => (t.id === id ? { ...t, hidden: true } : t))
     );
     setOpenMenuId(null);
+  };
+
+  const openTeamModify = async (team) => {
+    const detailedTeam = await fetchTeamDetail(team);
+    rememberSelectedTeam(detailedTeam);
+    navigate("/team-modify", { state: { team: detailedTeam }, from: "project" });
+  };
+
+  const openTeamDetail = async (team) => {
+    const detailedTeam = await fetchTeamDetail(team);
+    rememberSelectedTeam(detailedTeam);
+    navigate("/detail-page", { state: { team: detailedTeam } });
   };
 
   return (
@@ -439,7 +466,7 @@ export default function TeamPage() {
 
                 {openMenuId === team.id && (
                   <MenuBox ref={menuRef}>
-                    <MenuWapper onClick={() => navigate("/team-modify", {state: {team}, from: "project"})}>
+                    <MenuWapper onClick={() => openTeamModify(team)}>
                       <MenuIcon src={modifyIcon} />
                       <MenuText>수정</MenuText>
                     </MenuWapper>
@@ -466,10 +493,6 @@ export default function TeamPage() {
                     <PeriodText>기간</PeriodText>
                     <TeamDetailText>{formatTeamPeriod(team)}</TeamDetailText>
                   </DetailBox>
-                  <DetailBox>
-                    <ChargeText>담당</ChargeText>
-                    <TeamDetailText>{formatTeamCharge(team) || "-"}</TeamDetailText>
-                  </DetailBox>
                 </TextBox>
 
                 <ProgressText>{progress}%</ProgressText>
@@ -479,7 +502,7 @@ export default function TeamPage() {
                   </ProgressBar>
                 </BarWapper>
 
-                <DetailText onClick={() => navigate("/detail-page", {state: {team}})}>
+                <DetailText onClick={() => openTeamDetail(team)}>
                   자세히 보기
                 </DetailText>
               </TeamBarContainer>

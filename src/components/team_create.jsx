@@ -201,12 +201,14 @@ export default function TeamCreate(){
                     description: "",
                 }),
             });
+            const createdTeam = {
+                ...mapApiTeam(data.team),
+                period: buildPeriod(endDate),
+            };
+            sessionStorage.setItem("plank-selected-team", JSON.stringify(createdTeam));
             navigate("/team-modify", {
                 state: {
-                    team: {
-                        ...mapApiTeam(data.team),
-                        period: buildPeriod(endDate),
-                    },
+                    team: createdTeam,
                     from: "create"
                 }
             });

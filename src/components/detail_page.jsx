@@ -457,6 +457,14 @@ const buildScheduleGroups = (team) => {
 	return groups;
 };
 
+const loadStoredTeam = () => {
+	try {
+		return JSON.parse(sessionStorage.getItem("plank-selected-team") || "null");
+	} catch {
+		return null;
+	}
+};
+
 export default function TeamDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -487,7 +495,7 @@ export default function TeamDetailPage() {
     description: "",
 	team_explan: [],
 	team_deadline: [],
-    ...(location.state?.team ?? {}), // ← 전달된 값으로 덮어쓰기
+    ...(location.state?.team ?? loadStoredTeam() ?? {}), // ← 전달된 값으로 덮어쓰기
   };
   const [tasks, setTasks] = useState(() => loadProjectTasks(team));
   const [taskTitle, setTaskTitle] = useState("");

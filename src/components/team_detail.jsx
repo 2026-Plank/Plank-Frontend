@@ -361,6 +361,18 @@ const buildInitialGroups = (team) => {
     return acc;
 };
 
+const loadStoredTeam = () => {
+    try {
+        return JSON.parse(sessionStorage.getItem("plank-selected-team") || "null");
+    } catch {
+        return null;
+    }
+};
+
+const rememberTeam = (team) => {
+    sessionStorage.setItem("plank-selected-team", JSON.stringify(team));
+};
+
 export default function TeamDetailCreatePage(){
     const navigate = useNavigate();
     const location = useLocation();
@@ -399,7 +411,7 @@ export default function TeamDetailCreatePage(){
         members: [],
         description: "",
         team_explan: [],
-        ...(location.state?.team ?? {}),
+        ...(location.state?.team ?? loadStoredTeam() ?? {}),
     };
     const [team, setTeam] = useState(initialTeam);
     const from = location.state?.from;
@@ -491,15 +503,19 @@ export default function TeamDetailCreatePage(){
                 body: JSON.stringify({ friendId }),
             });
             if (data.team) setTeam(prev => ({ ...prev, ...mapApiTeam(data.team) }));
-            setMembers(prev => [
-                ...prev,
-                {
-                    id: friend.userid || friend.id,
-                    userPk: friend.userPk,
-                    name: friend.name || friend.userid || friend.email || "이름 없음",
-                    email: friend.email,
-                }
-            ]);
+            setMembers(prev => {
+                const next = [
+                    ...prev,
+                    {
+                        id: friend.userid || friend.id,
+                        userPk: friend.userPk,
+                        name: friend.name || friend.userid || friend.email || "이름 없음",
+                        email: friend.email,
+                    }
+                ];
+                rememberTeam({ ...team, members: next });
+                return next;
+            });
             setInvitableFriends(prev => prev.filter(item => String(item.userid || item.id || item.userPk) !== String(friendId)));
         } catch (error) {
             setInviteError(error.message || "친구 초대에 실패했습니다.");
