@@ -642,24 +642,15 @@ export default function TeamDetailCreatePage(){
     const InviteFriend = async (friend) => {
         try {
             const friendId = friend.userid || friend.id || friend.userPk;
-            const data = await apiRequest(`/api/teams/${team.id}/invite`, {
+            await apiRequest(`/api/teams/${team.id}/invite`, {
                 method: "POST",
                 body: JSON.stringify({ friendId }),
             });
-            if (data.team) setTeam(prev => ({ ...prev, ...mapApiTeam(data.team) }));
-            setMembers(prev => {
-                const next = [
-                    ...prev,
-                    {
-                        id: friend.userid || friend.id,
-                        userPk: friend.userPk,
-                        name: friend.name || friend.userid || friend.email || "이름 없음",
-                        email: friend.email,
-                    }
-                ];
-                rememberTeam({ ...team, members: next });
-                return next;
-            });
+            const detail = await apiRequest(`/api/teams/${team.id}`);
+            const nextTeam = mapApiTeam(detail.team || team);
+            setTeam(nextTeam);
+            setMembers(nextTeam.members || []);
+            rememberTeam(nextTeam);
             setInvitableFriends(prev => prev.filter(item => String(item.userid || item.id || item.userPk) !== String(friendId)));
         } catch (error) {
             setInviteError(error.message || "친구 초대에 실패했습니다.");

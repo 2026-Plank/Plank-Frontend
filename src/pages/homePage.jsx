@@ -20,7 +20,8 @@ import week_right from '../assets/week_right.svg';
 import addIcon from '../assets/add.svg';
 import editIcon from '../assets/edit.svg';
 import deleteIcon from '../assets/delete.svg';
-import { apiRequest } from "../utils/api";
+import { apiRequest, mapApiTeam } from "../utils/api";
+import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
 
 export const GlobalStyle = createGlobalStyle`
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
@@ -77,6 +78,28 @@ const formatCardDate = (value) => {
     if (Number.isNaN(date.getTime())) return String(value).slice(-2);
     return String(date.getDate()).padStart(2, "0");
 };
+
+const normalizeScheduleDate = (value) => {
+    if (!value) return "";
+    const text = String(value);
+    if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return text.slice(0, 10);
+    return toDateKey(date);
+};
+
+const buildCalendarMarks = (schedules = []) => schedules.reduce((marks, schedule) => {
+    const key = normalizeScheduleDate(schedule.targetDate);
+    if (key) marks[key] = (marks[key] || 0) + 1;
+    return marks;
+}, {});
+
+const mapScheduleToTask = (schedule) => ({
+    id: `schedule-${schedule.id}`,
+    text: `[${schedule.dpName || schedule.type || "일정"}] ${schedule.title}`,
+    checked: schedule.status === "Done",
+    targetDate: normalizeScheduleDate(schedule.targetDate),
+});
 
 const MiniCalendar = ({ currentViewDate, setCurrentViewDate, calendarMarks }) => {
     const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -150,27 +173,44 @@ export default function HomePage() {
     useEffect(() => {
         const loadHomeDashboard = async () => {
             try {
-                const data = await apiRequest("/api/home");
-                const user = data.user || {};
-                const projectItems = (data.projects || []).map((project) => ({
-                    id: `project-${project.id}`,
-                    text: `[${project.name}] ${project.done || 0}/${project.total || 0} 완료`,
-                    checked: Number(project.total || 0) > 0 && Number(project.done || 0) >= Number(project.total || 0),
-                }));
-                const todayItems = (data.todaySchedules || []).map((schedule) => ({
-                    id: `schedule-${schedule.id}`,
-                    text: `[${schedule.dpName || schedule.type || "일정"}] ${schedule.title}`,
-                    checked: schedule.status === "Done",
-                }));
+                const [homeData, teamData, scheduleData] = await Promise.all([
+                    apiRequest("/api/home").catch(() => ({})),
+                    apiRequest("/api/teams"),
+                    apiRequest("/api/schedules"),
+                ]);
+                const user = homeData.user || {};
+                const teamItems = (teamData.teams || []).map(mapApiTeam).map((team) => {
+                    const tasks = loadProjectTasks(team);
+                    const total = tasks.length || Number(team.raw?.taskTotal || 0);
+                    const done = tasks.length
+                        ? tasks.filter((task) => task.checked).length
+                        : Number(team.raw?.taskDone || 0);
+                    const progress = calculateProgress(tasks, Number(team.progress || 0));
+                    return {
+                        id: `project-${team.id}`,
+                        text: `[${team.title}] ${done}/${total} 완료`,
+                        checked: total > 0 && done >= total,
+                        progress,
+                    };
+                });
+
+                const schedules = (scheduleData.schedules || []).map((schedule) => ({
+                    ...schedule,
+                    targetDate: normalizeScheduleDate(schedule.targetDate),
+                })).sort((a, b) => String(a.targetDate).localeCompare(String(b.targetDate)) || Number(a.id) - Number(b.id));
+                const todayKey = toDateKey(new Date());
+                const todaySchedules = schedules.filter((schedule) => schedule.targetDate === todayKey);
+                const upcoming = schedules.filter((schedule) => schedule.targetDate >= todayKey).slice(0, 5);
+                const todoSource = todaySchedules.length ? todaySchedules : upcoming;
 
                 setProfileInfo({
                     name: user.name || user.userid || "사용자",
                     job: user.profile || user.department || "",
                 });
-                setProjects(projectItems);
-                setTodos(todayItems);
-                setUpcomingSchedules((data.upcomingSchedules || []).slice(0, 3));
-                setCalendarMarks(data.calendarMarks || {});
+                setProjects(teamItems);
+                setTodos(todoSource.map(mapScheduleToTask));
+                setUpcomingSchedules(upcoming.slice(0, 3));
+                setCalendarMarks(buildCalendarMarks(schedules));
                 setLoadError("");
             } catch (error) {
                 setProjects([]);
