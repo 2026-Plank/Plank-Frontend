@@ -423,6 +423,43 @@ const EmptyTaskText = styled.span`
 	padding: 8px 0;
 `;
 
+const EmptyDescriptionText = styled.span`
+	margin-left: 3.5%;
+	color: var(--Gray-8, #575856);
+	font-size: 18px;
+`;
+
+const getMemberTeams = (member) => {
+	if (Array.isArray(member.join_team)) return member.join_team.filter(Boolean);
+	if (typeof member.join_team === "string") return member.join_team.split(",").map(t => t.trim()).filter(Boolean);
+	if (member.department) return [member.department];
+	return [];
+};
+
+const buildScheduleGroups = (team) => {
+	const groups = {};
+	(team.members ?? []).forEach((member) => {
+		const memberTeams = getMemberTeams(member);
+		const groupNames = memberTeams.length ? memberTeams : ["전체"];
+		groupNames.forEach((groupName) => {
+			if (!groups[groupName]) groups[groupName] = [];
+			groups[groupName].push(member);
+		});
+	});
+
+	(team.team_deadline ?? []).forEach((item) => {
+		if (item.join_team && !groups[item.join_team]) groups[item.join_team] = [];
+	});
+	(team.team_explan ?? []).forEach((item) => {
+		if (item.join_team && !groups[item.join_team]) groups[item.join_team] = [];
+	});
+
+	if (Object.keys(groups).length === 0) {
+		groups["전체"] = team.members ?? [];
+	}
+	return groups;
+};
+
 export default function TeamDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -496,12 +533,7 @@ export default function TeamDetailPage() {
 	updateTasks(tasks.filter((task) => task.id !== taskId));
   };
 
-  const getMemberTeams = (member) => {
-	if (Array.isArray(member.join_team)) return member.join_team;
-	if (typeof member.join_team === "string") return member.join_team.split(",").map(t => t.trim());
-	if (member.department) return [member.department];
-	return [];
-  };
+  const scheduleGroups = buildScheduleGroups(team);
 
   return (
     <>
@@ -576,7 +608,11 @@ export default function TeamDetailPage() {
 							<VerticalLine />
 							<DescriptionText>{team.title}</DescriptionText>
 						</TextWapper>
-						<ExplanText>{team.description || "-"}</ExplanText>
+						{team.description ? (
+							<ExplanText>{team.description}</ExplanText>
+						) : (
+							<EmptyDescriptionText>프로젝트 설명이 없습니다.</EmptyDescriptionText>
+						)}
 					</BottomWapper>
 					<BottomWapper>
 						<TextWapper>
@@ -631,18 +667,7 @@ export default function TeamDetailPage() {
 							<DescriptionText>프로젝트 일정/구성</DescriptionText>
 						</TextWapper>
 						<TeamBox>
-							{Object.entries(
-								team.members.reduce((acc, member) => {
-									// 배열이면 그대로, 문자열이면 split
-									const teams = getMemberTeams(member);
-									
-									teams.forEach(teamKey => {
-										if (!acc[teamKey]) acc[teamKey] = [];
-										acc[teamKey].push(member);
-									});
-									return acc;
-								}, {})
-							).map(([teamName, members], index) => (
+							{Object.entries(scheduleGroups).map(([teamName, members], index) => (
 								<TeamWapper key={index}>
 									<NameWapper>
 										<TeamName>{teamName}</TeamName>
@@ -686,6 +711,14 @@ export default function TeamDetailPage() {
 											.map((t, i) => (
 												<TeamContentText key={i}>{t.explan}</TeamContentText>
 											))}
+											{!team.team_explan?.some((t) => {
+												const teams = Array.isArray(t.join_team)
+													? t.join_team
+													: String(t.join_team ?? "").split(",").map(t => t.trim());
+												return teams.includes(teamName);
+											}) && (
+												<TeamContentText>업무 내용을 추가해 주세요.</TeamContentText>
+											)}
 										</ContentWapper>
 									</TeamTextWapper>
 								</TeamWapper>

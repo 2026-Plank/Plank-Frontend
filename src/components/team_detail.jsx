@@ -1,7 +1,7 @@
 //packages
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 
 //assets
 import delete_icon from "../assets/x_icon.svg";
@@ -66,6 +66,8 @@ import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
+import { apiRequest, mapApiTeam } from "../utils/api";
+import { formatTeamPeriod, formatToday } from "../utils/teamDisplay";
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -186,6 +188,13 @@ const MemberRow = styled.div`
     align-items: center;
     justify-content: center;
 `;
+const MemberList = styled.div`
+    margin-left: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+`;
 const MemberBox = styled.div`
     display: flex;
     width: 160px;
@@ -210,6 +219,56 @@ const UserName = styled.span`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+`;
+const EmptyText = styled.span`
+    color: var(--Gray-7, #70716F);
+    font-family: Pretendard;
+    font-size: 18px;
+`;
+const InviteWrapper = styled.div`
+    position: relative;
+`;
+const AddMemberButton = styled.button`
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background: var(--Gray-4, #E0E0E0);
+    color: #000;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+`;
+const InviteMenu = styled.div`
+    position: absolute;
+    top: 48px;
+    left: 0;
+    width: 280px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 10px;
+    background: #FFF;
+    box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.12);
+    z-index: 30;
+`;
+const InviteItem = styled.button`
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    text-align: left;
+
+    &:hover {
+        background: #F9F9F8;
+    }
 `;
 const DataInput = styled.input`
     margin-left: 50px;
@@ -262,6 +321,52 @@ const TeamContentInput = styled.input`
     border-bottom: ${({ $isNew }) => $isNew ? "1px solid #000" : "none"};
 `;
 
+const getPeriodParts = (period) => {
+    const text = String(period || "").trim();
+    if (!text) return [formatToday(), ""];
+    const parts = text.split(/\s*[-~]\s*/).filter(Boolean);
+    if (parts.length >= 2) return [parts[0], parts.slice(1).join(" ~ ")];
+    return [formatToday(), parts[0] || ""];
+};
+
+const getMemberTeams = (member) => {
+    if (Array.isArray(member.join_team)) return member.join_team.filter(Boolean);
+    if (typeof member.join_team === "string") return member.join_team.split(",").map(t => t.trim()).filter(Boolean);
+    if (member.department) return [member.department];
+    return [];
+};
+
+const buildInitialGroups = (team) => {
+    const acc = {};
+    (team.members ?? []).forEach(member => {
+        const teams = getMemberTeams(member);
+        const groupNames = teams.length ? teams : ["전체"];
+        groupNames.forEach(teamKey => {
+            if (!acc[teamKey]) acc[teamKey] = { members: [], period: "", explan: [], isNew: false };
+            acc[teamKey].members.push(member);
+        });
+    });
+
+    (team.team_deadline ?? []).forEach(d => {
+        if (!acc[d.join_team]) acc[d.join_team] = { members: [], period: "", explan: [], isNew: false };
+        acc[d.join_team].period = d.deadline;
+    });
+    (team.team_explan ?? []).forEach(t => {
+        if (!acc[t.join_team]) acc[t.join_team] = { members: [], period: "", explan: [], isNew: false };
+        acc[t.join_team].explan.push(t.explan);
+    });
+
+    if (Object.keys(acc).length === 0) {
+        acc["전체"] = {
+            members: team.members ?? [],
+            period: formatTeamPeriod(team),
+            explan: [team.description || "프로젝트 업무 내용을 추가해 주세요."],
+            isNew: false,
+        };
+    }
+    return acc;
+};
+
 export default function TeamDetailCreatePage(){
     const navigate = useNavigate();
     const location = useLocation();
@@ -291,7 +396,7 @@ export default function TeamDetailCreatePage(){
     };
 
     // title, logo는 고정 표시용
-    const team = {
+    const initialTeam = {
         id: null,
         title: "프로젝트 명",
         period: "",
@@ -302,10 +407,11 @@ export default function TeamDetailCreatePage(){
         team_explan: [],
         ...(location.state?.team ?? {}),
     };
+    const [team, setTeam] = useState(initialTeam);
     const from = location.state?.from;
 
     // 수정 가능한 필드만 state로
-    const periodParts = team.period?.split(" - ") ?? ["", ""];
+    const periodParts = getPeriodParts(formatTeamPeriod(team));
     const [startPeriod, setStartPeriod] = useState(periodParts[0]);
     const [endPeriod, setEndPeriod] = useState(periodParts[1]);
     const [charge, setCharge] = useState(team.charge);
@@ -313,28 +419,15 @@ export default function TeamDetailCreatePage(){
     const [description, setDescription] = useState(team.description);
     const [teamExplan, setTeamExplan] = useState(team.team_explan);
     const [members, setMembers] = useState(team.members);
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [invitableFriends, setInvitableFriends] = useState([]);
+    const [inviteError, setInviteError] = useState("");
 
-    const [teamGroups, setTeamGroups] = useState(() => {
-        const acc = {};
-        (team.members ?? []).forEach(member => {
-            const teams = Array.isArray(member.join_team)
-                ? member.join_team
-                : member.join_team.split(",").map(t => t.trim());
-            teams.forEach(teamKey => {
-                if (!acc[teamKey]) acc[teamKey] = { members: [], period: "", explan: [], isNew: false };
-                acc[teamKey].members.push(member);
-            });
-        });
-        // team_deadline에서 기한 초기화
-        (team.team_deadline ?? []).forEach(d => {
-            if (acc[d.join_team]) acc[d.join_team].period = d.deadline;
-        });
-        // team_explan에서 내용 초기화
-        (team.team_explan ?? []).forEach(t => {
-            if (acc[t.join_team]) acc[t.join_team].explan.push(t.explan);
-        });
-        return acc;
-    });
+    const [teamGroups, setTeamGroups] = useState(() => buildInitialGroups(team));
+
+    useEffect(() => {
+        setTeamGroups(buildInitialGroups({ ...team, members, description }));
+    }, [members]);
     
     const AddTeam = () => {
         const newTeamName = `새 팀 ${Object.keys(teamGroups).length + 1}`;
@@ -375,8 +468,48 @@ export default function TeamDetailCreatePage(){
     };
 
     const DeletePeriod = () => {
-        setStartPeriod("");
+        setStartPeriod(formatToday());
         setEndPeriod("");
+    };
+
+    const LoadInvitableFriends = async () => {
+        if (!team.id) {
+            setInviteError("프로젝트 생성 완료 후 친구를 초대할 수 있습니다.");
+            setInviteOpen(true);
+            return;
+        }
+        try {
+            const data = await apiRequest(`/api/teams/${team.id}/inviteable-friends`);
+            setInvitableFriends(data.friends || []);
+            setInviteError("");
+            setInviteOpen(true);
+        } catch (error) {
+            setInviteError(error.message || "초대 가능한 친구를 불러오지 못했습니다.");
+            setInviteOpen(true);
+        }
+    };
+
+    const InviteFriend = async (friend) => {
+        try {
+            const friendId = friend.userid || friend.id || friend.userPk;
+            const data = await apiRequest(`/api/teams/${team.id}/invite`, {
+                method: "POST",
+                body: JSON.stringify({ friendId }),
+            });
+            if (data.team) setTeam(prev => ({ ...prev, ...mapApiTeam(data.team) }));
+            setMembers(prev => [
+                ...prev,
+                {
+                    id: friend.userid || friend.id,
+                    userPk: friend.userPk,
+                    name: friend.name || friend.userid || friend.email || "이름 없음",
+                    email: friend.email,
+                }
+            ]);
+            setInvitableFriends(prev => prev.filter(item => String(item.userid || item.id || item.userPk) !== String(friendId)));
+        } catch (error) {
+            setInviteError(error.message || "친구 초대에 실패했습니다.");
+        }
     };
 
     const SetData = async () => {
@@ -438,7 +571,7 @@ export default function TeamDetailCreatePage(){
                     </Item>
                 </Menu>
                 <ContentBox>
-                    <BackWapper onClick={() => SetData()}>
+                    <BackWapper onClick={() => navigate("/project")}>
                         <TeamIcon src={backIcon} />
                         <BackText>{from === "create" ? "생성 완료" : "돌아가기"}</BackText>
                     </BackWapper>
@@ -502,7 +635,7 @@ export default function TeamDetailCreatePage(){
                         </TextWapper>
                         <TextWapper>
                             <InfoText>참여자</InfoText>
-                            <MemberRow>
+                            <MemberList>
                                 {members.length > 0 ? (
                                     members.map((member, index) => (
                                         <MemberBox key={index}>
@@ -512,9 +645,24 @@ export default function TeamDetailCreatePage(){
                                         </MemberBox>
                                     ))
                                 ) : (
-                                    <UserName>-</UserName>
+                                    <EmptyText>참여자 없음</EmptyText>
                                 )}
-                            </MemberRow>
+                                <InviteWrapper>
+                                    <AddMemberButton type="button" onClick={LoadInvitableFriends}>+</AddMemberButton>
+                                    {inviteOpen && (
+                                        <InviteMenu>
+                                            {inviteError && <EmptyText>{inviteError}</EmptyText>}
+                                            {!inviteError && invitableFriends.length === 0 && <EmptyText>초대 가능한 친구가 없습니다.</EmptyText>}
+                                            {!inviteError && invitableFriends.map((friend) => (
+                                                <InviteItem key={friend.userPk || friend.userid || friend.id} type="button" onClick={() => InviteFriend(friend)}>
+                                                    <span>{friend.name || friend.userid || friend.email}</span>
+                                                    <span>초대</span>
+                                                </InviteItem>
+                                            ))}
+                                        </InviteMenu>
+                                    )}
+                                </InviteWrapper>
+                            </MemberList>
                         </TextWapper>
                     </Wapper>
                     <TextLine $margin_size={30} />
@@ -524,14 +672,14 @@ export default function TeamDetailCreatePage(){
                                 <VerticalLine />
                                 <DescriptionText>{team.title}</DescriptionText>
                             </TextWapper>
-                            <ExplanText>{description || "-"}</ExplanText>
+                            <ExplanText>{description || "프로젝트 설명이 없습니다."}</ExplanText>
                         </BottomWapper>
                         <BottomWapper>
                             <TextWapper>
                                 <VerticalLine />
                                 <DescriptionText>프로젝트 일정/구성</DescriptionText>
                                 <IconWapper $size={30} onClick={AddTeam} >
-                                    <AddIcon src={edit_icon} />
+                                    <AddIcon src={add_icon} />
                                 </IconWapper>
                             </TextWapper>
                             <TeamBox>

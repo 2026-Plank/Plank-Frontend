@@ -7,7 +7,8 @@ import { useState } from "react";
 import Backbtn from '../assets/back-button.svg';
 import logo from '../assets/logo.svg';
 import { GlobalStyle } from "../pages/homePage";
-import { formatToday } from "../utils/teamDisplay";
+import { formatDateText, formatToday } from "../utils/teamDisplay";
+import { apiRequest, mapApiTeam, toApiDate } from "../utils/api";
 
 //css
 export const Container = styled.div`
@@ -149,7 +150,7 @@ export default function TeamCreate(){
         const trimmed = value.trim();
         if (!trimmed) return "";
         if (/[-~]/.test(trimmed)) return trimmed;
-        return `${formatToday()} ~ ${trimmed}`;
+        return `${formatToday()} ~ ${formatDateText(trimmed)}`;
     };
 
     //일정 입력 통일되게 맞추는 함수
@@ -184,23 +185,34 @@ export default function TeamCreate(){
 
     const sendTeamData = async (e) => {
         e.preventDefault();
-        const randomCode = Math.random().toString(36).substring(2, 10).toLowerCase();
-        navigate("/team-modify", {
-            state: {
-                team: {
-                    id: null,
-                    title: teamName,
-                    period: buildPeriod(endDate),
-                    code: randomCode,
-                    charge: "",
-                    members: [],
+        const name = teamName.trim();
+        const deadline = toApiDate(endDate);
+        if (!name || !deadline) {
+            alert("프로젝트 이름과 기간을 작성해 주세요.");
+            return;
+        }
+
+        try {
+            const data = await apiRequest("/api/teams/create", {
+                method: "POST",
+                body: JSON.stringify({
+                    name,
+                    deadline,
                     description: "",
-                    team_explan: [],
-                    team_deadline: [],
-                },
-                from: "create"
-            }
-        });
+                }),
+            });
+            navigate("/team-modify", {
+                state: {
+                    team: {
+                        ...mapApiTeam(data.team),
+                        period: buildPeriod(endDate),
+                    },
+                    from: "create"
+                }
+            });
+        } catch (error) {
+            alert(error.message || "프로젝트 생성에 실패했습니다.");
+        }
     
         // if (!teamName.trim() || !endDate.trim()) {
         //     alert("프로젝트 이름과 기간을 작성해 주세요!");
@@ -267,7 +279,7 @@ export default function TeamCreate(){
                             <Label>프로젝트 이름</Label>
                         </InputWrapper>
                         <InputWrapper>
-                            <DateInput type="text" placeholder="" value={endDate} onChange={(e) => setDate(e.target.value)} />
+                            <DateInput type="date" placeholder="" value={endDate} onChange={(e) => setDate(e.target.value)} />
                             <Label>기간</Label>
                         </InputWrapper>
                         <SumbitButton type="submit">생성하기</SumbitButton>
