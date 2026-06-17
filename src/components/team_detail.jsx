@@ -66,7 +66,7 @@ import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
-import { apiRequest, mapApiTeam } from "../utils/api";
+import { apiRequest, mapApiTeam, toApiDate } from "../utils/api";
 import { formatTeamPeriod, formatToday } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks, saveProjectTasks } from "../utils/projectTasks";
 //css
@@ -658,34 +658,32 @@ export default function TeamDetailCreatePage(){
     };
 
     const SetData = async () => {
-        try{
-            const res = await fetch("host이름/join", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+        if (!team.id) {
+            navigate("/project");
+            return;
+        }
+
+        try {
+            const data = await apiRequest(`/api/teams/${team.id}`, {
+                method: "PUT",
                 body: JSON.stringify({
-                    id: team.id,
-                    title: team.title,
-                    period: `${startPeriod} - ${endPeriod}`,
-                    charge,
-                    code,
-                    description,
-                    members,
-                    teamExplan,
-                }),
+                    teamCode: code,
+                    deadline: toApiDate(endPeriod || startPeriod),
+                    dpName: description,
+                })
             });
-    
-            if(res.ok){
-                console.log("팀 세부사항 설정 성공");
-                alert("팀 설정 성공");
-                navigate("/project");
-            }else{
-                console.log("팀 세부사항 설정 실패");
-                alert("팀 설정 실패");
-            }
-        }catch(err){
-            console.error(err);
+            const nextTeam = {
+                ...team,
+                ...mapApiTeam(data.team || team),
+                period: `${startPeriod} ~ ${endPeriod}`,
+                code,
+                description,
+                members,
+            };
+            rememberTeam(nextTeam);
+            navigate("/project");
+        } catch (err) {
+            alert(err.message || "프로젝트 수정에 실패했습니다.");
         }
     };
 

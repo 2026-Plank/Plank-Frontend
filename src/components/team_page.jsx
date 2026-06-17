@@ -397,6 +397,17 @@ export default function TeamPage() {
     setOpenMenuId(null);
   };
 
+  const handleDeleteTeam = async (team) => {
+    if (!team?.id) return;
+    try {
+      await apiRequest(`/api/teams/${team.id}`, { method: "DELETE" });
+      setTeams((prev) => prev.filter((t) => t.id !== team.id));
+      setOpenMenuId(null);
+    } catch (err) {
+      alert(err.message || "프로젝트 삭제에 실패했습니다.");
+    }
+  };
+
   const openTeamModify = async (team) => {
     const detailedTeam = await fetchTeamDetail(team);
     rememberSelectedTeam(detailedTeam);
@@ -476,11 +487,7 @@ export default function TeamPage() {
                       <MenuText>숨김</MenuText>
                     </MenuWapper>
                     <MenuLine />
-                    <MenuWapper
-                      onClick={() =>
-                        setTeams((prev) => prev.filter((t) => t.id !== team.id))
-                      }
-                    >
+                    <MenuWapper onClick={() => handleDeleteTeam(team)}>
                       <MenuIcon src={deleteIcon} />
                       <MenuText>삭제</MenuText>
                     </MenuWapper>
