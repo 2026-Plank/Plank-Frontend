@@ -96,6 +96,7 @@ const buildCalendarMarks = (schedules = []) => schedules.reduce((marks, schedule
 
 const mapScheduleToTask = (schedule) => ({
     id: `schedule-${schedule.id}`,
+    scheduleId: schedule.id,
     text: `[${schedule.dpName || schedule.type || "일정"}] ${schedule.title}`,
     checked: schedule.status === "Done",
     targetDate: normalizeScheduleDate(schedule.targetDate),
@@ -236,13 +237,33 @@ export default function HomePage() {
         return { day: d.getDate(), full: d.toDateString(), event: Boolean(calendarMarks[toDateKey(d)]) };
     });
 
-    const handleBoxClick = (id, section) => {
+    const handleBoxClick = async (id, section) => {
         if (deleteMode === section) {
             if (section === 'project') setProjects(projects.filter(p => p.id !== id));
             else setTodos(todos.filter(t => t.id !== id));
-        } else {
-            if (section === 'project') setProjects(projects.map(p => p.id === id ? { ...p, checked: !p.checked } : p));
-            else setTodos(todos.map(t => t.id === id ? { ...t, checked: !t.checked } : t));
+            return;
+        }
+
+        if (section === 'project') return;
+
+        const target = todos.find((todo) => todo.id === id);
+        if (!target?.scheduleId) return;
+
+        const nextChecked = !target.checked;
+        setTodos((prev) => prev.map((todo) => (
+            todo.id === id ? { ...todo, checked: nextChecked } : todo
+        )));
+
+        try {
+            await apiRequest(`/api/schedules/${target.scheduleId}`, {
+                method: "PUT",
+                body: JSON.stringify({ status: nextChecked ? "Done" : "Wait" }),
+            });
+        } catch (error) {
+            setTodos((prev) => prev.map((todo) => (
+                todo.id === id ? { ...todo, checked: target.checked } : todo
+            )));
+            alert(error.message || "TODO 완료 상태를 저장하지 못했습니다.");
         }
     };
 
@@ -325,7 +346,9 @@ export default function HomePage() {
                             )}
                             {(section === 'project' ? projects : todos).map(item => (
                                 <TaskRow key={item.id} onClick={(e) => e.stopPropagation()}>
-                                    <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />
+                                    {section === 'todo' && (
+                                        <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />
+                                    )}
                                     {editingId === item.id ? (
                                         <EditInput autoFocus defaultValue={item.text} onKeyDown={(e) => e.key === 'Enter' && handleEditComplete(item.id, e.target.value, section)} onBlur={(e) => handleEditComplete(item.id, e.target.value, section)} />
                                     ) : (
@@ -335,7 +358,7 @@ export default function HomePage() {
                             ))}
                             {addingTo === section && (
                                 <TaskRow onClick={(e) => e.stopPropagation()}>
-                                    <CustomCheckBox $checked={false} />
+                                    {section === 'todo' && <CustomCheckBox $checked={false} />}
                                     <EditInput autoFocus placeholder="내용을 입력하세요..." onKeyDown={(e) => handleAddItem(e, section)} />
                                 </TaskRow>
                             )}
