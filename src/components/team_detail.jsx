@@ -1,8 +1,7 @@
 //packages
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import { useState, useRef } from "react";
 
 //assets
 import delete_icon from "../assets/x_icon.svg";
@@ -24,44 +23,49 @@ import in_chat from '../assets/in_chat.svg';
 import icon from '../assets/icon.svg';
 import in_icon from '../assets/in_icon.svg';
 import alarm from '../assets/alarm.svg';
+import setting from '../assets/setting.svg';
 import logo from '../assets/logo.svg';
 //components
 import backIcon from "../assets/detail_back_icon.svg";
 import { GlobalStyle } from "../pages/homePage";
 
-import Menu from "./menu_layout.jsx";
+import { Menu } from "../pages/homePage";
+import { Symbol } from "../pages/homePage";
+import { Logo } from "../pages/homePage";
+import { Item } from "../pages/homePage";
+import { Background } from "../pages/homePage";
+import { Icon } from "../pages/homePage";
+import { Text } from "../pages/homePage";
+import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 
 import { TextLine } from "./detail_page";
-import { Wrapper } from "./detail_page";
-import { BackWrapper } from "./detail_page";
+import { Wapper } from "./detail_page";
+import { BackWapper } from "./detail_page";
 import { BackText } from "./detail_page";
-import { TextWrapper } from "./detail_page";
+import { TextWapper } from "./detail_page";
 import { VerticalLine } from "./detail_page";
 import { DescriptionText } from "./detail_page";
-import { BottomWrapper } from "./detail_page";
-import FeedbackForm from "./feedback.jsx";
+import { BottomWapper } from "./detail_page";
 import { TeamBox } from "./detail_page";
-import { TeamWrapper } from "./detail_page";
-import { NameWrapper } from "./detail_page";
+import { TeamWapper } from "./detail_page";
+import { NameWapper } from "./detail_page";
 import { TeamName } from "./detail_page";
-import { TeamTextWrapper } from "./detail_page";
+import { TeamTextWapper } from "./detail_page";
 import { TitleText } from "./detail_page";
-import { MemberWrapper } from "./detail_page";
-import { TextIconWrapper } from "./detail_page";
+import { MemberWapper } from "./detail_page";
+import { TextIconWapper } from "./detail_page";
 import { MemberIcon } from "./detail_page";
 import { MemberName } from "./detail_page";
 import { TeamDeadLineText } from "./detail_page";
-import { ContentWrapper } from "./detail_page";
+import { ContentWapper } from "./detail_page";
 import { TeamContentText } from "./detail_page";
-import { ExtraWrapper } from "./detail_page";
+import { ExtraWapper } from "./detail_page";
 import { ExtraIcon } from "./detail_page";
 import { ExtraCount } from "./detail_page";
 import { ProjectName } from "./detail_page";
 import { ExplanText } from "./detail_page";
-import { apiRequest, toApiDate } from "../utils/api";
-
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -173,78 +177,40 @@ const InfoText = styled.span`
     font-style: normal;
     font-weight: 500;
     line-height: normal;
-    width: ${({$width}) => $width};
+    width: 80px;
     flex-shrink: 0;
 `;
 const MemberRow = styled.div`
     margin: 0 50px;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 8px;
+    justify-content: center;
 `;
 const MemberBox = styled.div`
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    margin: 4px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #c0da58 0%, #a0ba38 100%);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    position: relative;
-    transition: all 0.2s ease;
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-`;
-const MemberProfile = styled.div`
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #fff;
     display: flex;
+    width: 160px;
+    height: 40px;
+    padding: 10px 16px;
     align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #c0da58;
-    font-size: 12px;
-    flex-shrink: 0;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 8px;
+    background: var(--Gray-4, #E0E0E0);
+    margin-right: 10px;
+    box-sizing: border-box;
 `;
 const UserName = styled.span`
-    color: #fff;
+    color: var(--black-1, #000);
     font-family: Pretendard;
-    font-size: 14px;
+    font-size: 20px;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 400;
     line-height: normal;
+    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80px;
 `;
-const RemoveButton = styled.button`
-    background: rgba(255, 255, 255, 0.3);
-    border: none;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #fff;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.2s ease;
-    &:hover {
-        background: rgba(255, 255, 255, 0.6);
-        transform: scale(1.1);
-    }
-`
 const DataInput = styled.input`
     margin-left: 50px;
     color: var(--black-1, #000);
@@ -296,45 +262,18 @@ const TeamContentInput = styled.input`
     border-bottom: ${({ $isNew }) => $isNew ? "1px solid #000" : "none"};
 `;
 
-/* ★ 추가: 팀 박스(TeamBox) 아래에 독립 배치할 슬림형 컴팩트 버튼 정의 */
-const BottomSubmitButton = styled.button`
-    display: flex;
-    width: 280px; /* ★ 데스크톱 기준 너비 대폭 축소 (슬림화) */
-    height: 48px;
-    padding: 12px 24px;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    border-radius: 12px;
-    background: #c0da58;
-    color: #fff;
-    font-family: Pretendard;
-    font-size: 18px;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(192, 218, 88, 0.3);
-    margin: 40px auto 20px auto; /* 중앙 정렬 및 여백 균형 잡기 */
-    transition: all 0.2s ease-in-out;
-
-    &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(192, 218, 88, 0.45);
-        background: #c0da58;
-    }
-
-    @media (max-width: 480px) {
-        width: 60%; /* ★ 모바일에서도 꽉 차기보다 컴팩트한 비주얼 유지 */
-        max-width: 240px;
-        height: 44px;
-        font-size: 16px;
-        margin: 30px auto 10px auto;
-    }
-`;
-
 export default function TeamDetailCreatePage(){
     const navigate = useNavigate();
     const location = useLocation();
+
+    const menus = [
+        { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
+        { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
+        { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
+        { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
+        { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
+    ];
+    const isAlarmActive = location.pathname === "/notification";
 
     const [editingCharge, setEditingCharge] = useState(false);
     const [editingCode, setEditingCode] = useState(false);
@@ -342,20 +281,16 @@ export default function TeamDetailCreatePage(){
     const [codeWidth, setCodeWidth] = useState(100);
     const chargeRef = useRef(null);
     const codeRef = useRef(null);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-    const [feedbackTarget, setFeedbackTarget] = useState(null);
-    const [isLoadingTeam, setIsLoadingTeam] = useState(false);
-    const [inviteableFriends, setInviteableFriends] = useState([]);
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [isLoadingFriends, setIsLoadingFriends] = useState(false);
 
+    // 텍스트 길이 기반 너비 계산
     const calcWidth = (text, fontSize = 22) => {
         const min = 50;
-        const max = 400;
+        const max = 400;  // ← 최대 길이
         const estimated = text.length * (fontSize * 0.6);
         return Math.min(Math.max(estimated, min), max);
     };
 
+    // title, logo는 고정 표시용
     const team = {
         id: null,
         title: "프로젝트 명",
@@ -367,10 +302,9 @@ export default function TeamDetailCreatePage(){
         team_explan: [],
         ...(location.state?.team ?? {}),
     };
-    const [title, setTitle] = useState(team.title);
     const from = location.state?.from;
-    const editMode = location.state?.editMode || false;
 
+    // 수정 가능한 필드만 state로
     const periodParts = team.period?.split(" - ") ?? ["", ""];
     const [startPeriod, setStartPeriod] = useState(periodParts[0]);
     const [endPeriod, setEndPeriod] = useState(periodParts[1]);
@@ -379,93 +313,6 @@ export default function TeamDetailCreatePage(){
     const [description, setDescription] = useState(team.description);
     const [teamExplan, setTeamExplan] = useState(team.team_explan);
     const [members, setMembers] = useState(team.members);
-
-    const teamId = team.id || localStorage.getItem("teamId");
-
-    useEffect(() => {
-        const loadTeamDetails = async () => {
-            if (!teamId) return;
-            setIsLoadingTeam(true);
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`/api/teams/${teamId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const data = response.data.team;
-                if (data) {
-                    setTitle(data.name || data.dpName || team.title);
-                    setCharge(data.dpLeader || '');
-                    setCode(data.teamCode || '');
-                    setDescription(data.dpName || data.name || '');
-                    setMembers((data.members || []).map((member) => ({
-                        id: member.id ?? member.USERID ?? member.userid,
-                        name: member.name ?? member.NAME ?? member.email ?? "알 수 없는 사용자",
-                        role: member.role ?? member.ROLE,
-                        department: member.department,
-                        jobDetail: member.jobDetail
-                    })));
-                    if (data.deadline) {
-                        setStartPeriod(data.deadline);
-                        setEndPeriod('');
-                    }
-                }
-            } catch (error) {
-                console.error('팀 정보 조회 실패', error);
-            } finally {
-                setIsLoadingTeam(false);
-            }
-        };
-
-        loadTeamDetails();
-    }, [teamId]);
-
-    const loadInviteableFriends = async () => {
-        if (!teamId) return;
-        setIsLoadingFriends(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`/api/teams/${teamId}/inviteable-friends`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setInviteableFriends(response.data.friends || []);
-        } catch (error) {
-            console.error('초대 가능한 친구 조회 실패', error);
-        } finally {
-            setIsLoadingFriends(false);
-        }
-    };
-
-    const handleOpenInviteModal = () => {
-        loadInviteableFriends();
-        setShowInviteModal(true);
-    };
-
-    const handleInviteFriend = async (friendId) => {
-        if (!teamId) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                `/api/teams/${teamId}/invite`,
-                { friendId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            alert('친구를 초대했어요!');
-            setShowInviteModal(false);
-            const response = await axios.get(`/api/teams/${teamId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = response.data.team;
-            setMembers((data.members || []).map((member) => ({
-                id: member.id ?? member.USERID ?? member.userid,
-                name: member.name ?? member.NAME ?? member.email ?? "알 수 없는 사용자",
-                role: member.role ?? member.ROLE,
-                department: member.department,
-                jobDetail: member.jobDetail
-            })));
-        } catch (error) {
-            alert(error.response?.data?.error || '초대 실패');
-        }
-    };
 
     const [teamGroups, setTeamGroups] = useState(() => {
         const acc = {};
@@ -478,9 +325,11 @@ export default function TeamDetailCreatePage(){
                 acc[teamKey].members.push(member);
             });
         });
+        // team_deadline에서 기한 초기화
         (team.team_deadline ?? []).forEach(d => {
             if (acc[d.join_team]) acc[d.join_team].period = d.deadline;
         });
+        // team_explan에서 내용 초기화
         (team.team_explan ?? []).forEach(t => {
             if (acc[t.join_team]) acc[t.join_team].explan.push(t.explan);
         });
@@ -491,7 +340,7 @@ export default function TeamDetailCreatePage(){
         const newTeamName = `새 팀 ${Object.keys(teamGroups).length + 1}`;
         setTeamGroups(prev => ({ 
             ...prev, 
-            [newTeamName]: { members: [], period: "", explan: [""], isNew: true }
+            [newTeamName]: { members: [], period: "", explan: [""], isNew: true }  /* ← isNew 추가 */
         }));
     };
     
@@ -531,29 +380,34 @@ export default function TeamDetailCreatePage(){
     };
 
     const SetData = async () => {
-        if (!teamId) {
-            navigate("/project");
-            return;
-        }
-
-        try {
-            await apiRequest(`/api/teams/${teamId}`, {
-                method: "PUT",
+        try{
+            const res = await fetch("host이름/join", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({
-                    name: title,
-                    deadline: toApiDate(endPeriod || startPeriod),
-                    dpLeader: charge,
-                    teamCode: code,
-                    dpName: description,
+                    id: team.id,
+                    title: team.title,
+                    period: `${startPeriod} - ${endPeriod}`,
+                    charge,
+                    code,
+                    description,
                     members,
                     teamExplan,
                 }),
             });
-            alert("수정 완료");
-            navigate("/project");
-        } catch (err) {
+    
+            if(res.ok){
+                console.log("팀 세부사항 설정 성공");
+                alert("팀 설정 성공");
+                navigate("/project");
+            }else{
+                console.log("팀 세부사항 설정 실패");
+                alert("팀 설정 실패");
+            }
+        }catch(err){
             console.error(err);
-            alert(err.message || "수정 중 오류가 발생했습니다.");
         }
     };
 
@@ -561,17 +415,38 @@ export default function TeamDetailCreatePage(){
         <>
             <GlobalStyle />
             <PageLayout>
-                <Menu />
+                <Menu>
+                    <Symbol className="symbol" src={symbol} />
+                    <Logo className="logo" src={logo} />
+                    {menus.map((menu) => {
+                        const isActive = location.pathname === menu.path 
+                        || (menu.path === "/project" && location.pathname === "/team-modify");
+                        return (
+                            <Item key={menu.path} onClick={() => navigate(menu.path)} >
+                                <Background $active={isActive} />
+                                <Icon src={isActive ? menu.activeIcon : menu.icon} />
+                                <Text className="text">{menu.label}</Text>
+                            </Item>
+                        );
+                    })}
+                    <Line />
+                    {/* 🔔 알림 */}
+                    <Item onClick={() => navigate("/notification")}>
+                        <Background $active={isAlarmActive} />
+                        <Icon src={alarm} />
+                        <Text className="text">NOTIFICATIONS</Text>
+                    </Item>
+                </Menu>
                 <ContentBox>
-                    <BackWrapper onClick={() => SetData()}>
+                    <BackWapper onClick={() => SetData()}>
                         <TeamIcon src={backIcon} />
-                        <BackText>{editMode ? "수정 완료" : from === "create" ? "생성 완료" : "돌아가기"}</BackText>
-                    </BackWrapper>
+                        <BackText>{from === "create" ? "생성 완료" : "돌아가기"}</BackText>
+                    </BackWapper>
                     <TextLine />
-                    <Wrapper>
+                    <Wapper>
                         <TeamLogo src={default_logo} />
-                        <ProjectName>{title}</ProjectName>
-                        <TextWrapper>
+                        <ProjectName>{team.title}</ProjectName>
+                        <TextWapper>
                             <InfoText>기간</InfoText>
                             <DateWapper>
                                 <DateBox>
@@ -585,15 +460,15 @@ export default function TeamDetailCreatePage(){
                                     <DeleteIcon src={delete_icon} />
                                 </IconWapper>
                             </DateWapper>
-                        </TextWrapper>
-                        <TextWrapper>
+                        </TextWapper>
+                        <TextWapper>
                             <InfoText>담당</InfoText>
                             {editingCharge ? (
                                 <DataInput
                                     value={charge}
                                     onChange={(e) => {
                                         setCharge(e.target.value);
-                                        setChargeWidth(calcWidth(e.target.value));
+                                        setChargeWidth(calcWidth(e.target.value));  // ← 입력마다 너비 갱신
                                     }}
                                     autoFocus
                                     $width={chargeWidth}
@@ -602,11 +477,11 @@ export default function TeamDetailCreatePage(){
                                 <DataText ref={chargeRef}>{charge}</DataText>
                             )}
                             <EditIcon src={edit_icon} onClick={() => {
-                                setChargeWidth(calcWidth(charge));
-                                  setEditingCharge(prev => !prev);
+                                setChargeWidth(calcWidth(charge));  // ← 현재 텍스트 기준으로 초기 너비
+                                setEditingCharge(prev => !prev);
                             }} />
-                        </TextWrapper>
-                        <TextWrapper>
+                        </TextWapper>
+                        <TextWapper>
                             <InfoText>참여코드</InfoText>
                             {editingCode ? (
                                 <DataInput
@@ -616,66 +491,61 @@ export default function TeamDetailCreatePage(){
                                     $width={codeWidth}
                                 />
                             ) : (
-                                <DataText ref={codeRef}>{code}</DataText>
+                                <DataText
+                                    ref={codeRef}
+                                >{code}</DataText>
                             )}
                             <EditIcon src={edit_icon} onClick={() => {
                                 setCodeWidth(codeRef.current?.offsetWidth ?? 100);
                                 setEditingCode(prev => !prev);
                             }} />
-                        </TextWrapper>
-                        <TextWrapper>
+                        </TextWapper>
+                        <TextWapper>
                             <InfoText>참여자</InfoText>
                             <MemberRow>
                                 {members.length > 0 ? (
                                     members.map((member, index) => (
                                         <MemberBox key={index}>
-                                            <MemberProfile>
-                                                {member.name.charAt(0)}
-                                            </MemberProfile>
+                                            <UserIcon src={user_icon} />
                                             <UserName>{member.name}</UserName>
-                                            <RemoveButton onClick={() => DeleteMember(index)}>
-                                                ×
-                                            </RemoveButton>
+                                            <DeleteIcon src={delete_icon} onClick={() => DeleteMember(index)} />
                                         </MemberBox>
                                     ))
                                 ) : (
                                     <UserName>-</UserName>
                                 )}
-                                <IconWapper $size={35} onClick={handleOpenInviteModal} style={{cursor: 'pointer'}}>
-                                    <AddIcon src={add_icon} />
-                                </IconWapper>
                             </MemberRow>
-                        </TextWrapper>
-                    </Wrapper>
+                        </TextWapper>
+                    </Wapper>
                     <TextLine $margin_size={30} />
-                    <Wrapper>
-                        <BottomWrapper>
-                            <TextWrapper>
+                    <Wapper>
+                        <BottomWapper>
+                            <TextWapper>
                                 <VerticalLine />
                                 <DescriptionText>{team.title}</DescriptionText>
-                            </TextWrapper>
+                            </TextWapper>
                             <ExplanText>{description || "-"}</ExplanText>
-                        </BottomWrapper>
-                        <BottomWrapper>
-                            <TextWrapper>
+                        </BottomWapper>
+                        <BottomWapper>
+                            <TextWapper>
                                 <VerticalLine />
                                 <DescriptionText>프로젝트 일정/구성</DescriptionText>
                                 <IconWapper $size={30} onClick={AddTeam} >
                                     <AddIcon src={edit_icon} />
                                 </IconWapper>
-                            </TextWrapper>
+                            </TextWapper>
                             <TeamBox>
                                 {Object.entries(teamGroups).map(([teamName, group], index) => (
-                                    <TeamWrapper key={index}>
-                                        <NameWrapper>
+                                    <TeamWapper key={index}>
+                                        <NameWapper>
                                             <TeamNameInput
                                                 defaultValue={teamName}
                                                 onBlur={(e) => RenameTeam(teamName, e.target.value)}
                                             />
-                                        </NameWrapper>
-                                        <TeamTextWrapper>
+                                        </NameWapper>
+                                        <TeamTextWapper>
                                             <TitleText>참여자</TitleText>
-                                            <MemberWrapper>
+                                            <MemberWapper>
                                                 {group.members.slice(0, 2).map((member, i) => (
                                                     <TextIconWapper key={i}>
                                                         <MemberIcon src={user_icon} />
@@ -683,14 +553,14 @@ export default function TeamDetailCreatePage(){
                                                     </TextIconWapper>
                                                 ))}
                                                 {group.members.length > 2 && (
-                                                    <ExtraWrapper>
+                                                    <ExtraWapper>
                                                         <ExtraIcon src={extra_icon} />
                                                         <ExtraCount>{group.members.length - 2}</ExtraCount>
-                                                    </ExtraWrapper>
+                                                    </ExtraWapper>
                                                 )}
-                                            </MemberWrapper>
-                                        </TeamTextWrapper>
-                                        <TeamTextWrapper>
+                                            </MemberWapper>
+                                        </TeamTextWapper>
+                                        <TeamTextWapper>
                                             <TitleText>기한</TitleText>
                                             {group.isNew ? (
                                                 <TeamDeadLineInput
@@ -702,10 +572,10 @@ export default function TeamDetailCreatePage(){
                                                 <TeamDeadLineInput value={group.period}
                                                     onChange={(e) => UpdatePeriod(teamName, e.target.value)} />
                                             )}
-                                        </TeamTextWrapper>
-                                        <TeamTextWrapper>
+                                        </TeamTextWapper>
+                                        <TeamTextWapper>
                                             <TitleText>내용</TitleText>
-                                            <ContentWrapper>
+                                            <ContentWapper>
                                                 {group.isNew ? (
                                                     group.explan.slice(0, 2).map((explan, i) => (
                                                         <TeamContentInput
@@ -721,105 +591,15 @@ export default function TeamDetailCreatePage(){
                                                             onChange={(e) => UpdateExplan(teamName, i, e.target.value)} />
                                                     ))
                                                 )}
-                                            </ContentWrapper>
-                                        </TeamTextWrapper>
-                                    </TeamWrapper>
+                                            </ContentWapper>
+                                        </TeamTextWapper>
+                                    </TeamWapper>
                                 ))}
                             </TeamBox>
-                        </BottomWrapper>
-                    </Wrapper>
-                    
-                    {/* ★ 추가: 복잡한 카드 그룹(TeamBox) 바깥 맨 하단에 독립된 슬림형 완료 버튼 배치 */}
-                    <BottomSubmitButton onClick={SetData}>
-                        {editMode ? "변경 완료" : from === "create" ? "생성 완료" : "저장 하기"}
-                    </BottomSubmitButton>
-
+                        </BottomWapper>
+                    </Wapper>
                 </ContentBox>
             </PageLayout>
-            {showFeedbackModal && feedbackTarget && (
-                <FeedbackForm
-                    toUserId={feedbackTarget.userId}
-                    teamId={team.id}
-                    onClose={() => setShowFeedbackModal(false)}
-                    onSubmit={() => {
-                        setShowFeedbackModal(false);
-                    }}
-                />
-            )}
-            {showInviteModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 999
-                }}>
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: '12px',
-                        padding: '24px',
-                        maxWidth: '400px',
-                        maxHeight: '500px',
-                        overflow: 'auto',
-                        boxShadow: '0 0 20px rgba(0,0,0,0.2)'
-                    }}>
-                        <div style={{fontSize: '20px', fontWeight: 'bold', marginBottom: '16px'}}>
-                            친구 초대
-                        </div>
-                        {isLoadingFriends ? (
-                            <div>로딩 중...</div>
-                        ) : inviteableFriends.length > 0 ? (
-                            <div>
-                                {inviteableFriends.map((friend) => (
-                                    <div key={friend.id} style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '10px',
-                                        borderBottom: '1px solid #eee'
-                                    }}>
-                                        <span>{friend.name}</span>
-                                        <button
-                                            onClick={() => handleInviteFriend(friend.id)}
-                                            style={{
-                                                background: '#c0da58',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                padding: '6px 12px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            초대
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div>초대할 친구가 없어요.</div>
-                        )}
-                        <button
-                            onClick={() => setShowInviteModal(false)}
-                            style={{
-                                marginTop: '16px',
-                                background: '#e0e0e0',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '8px 16px',
-                                cursor: 'pointer',
-                                width: '100%'
-                            }}
-                        >
-                            닫기
-                        </button>
-                    </div>
-                </div>
-            )}
         </>
     )
 }

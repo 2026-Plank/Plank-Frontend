@@ -1,14 +1,32 @@
-import styled from "styled-components";
-import { useEffect, useRef, useState } from "react";
+//packages
+import styled, { createGlobalStyle } from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 
+//assets, components
 import searchIcon from "../assets/search_icon.png";
+import createIcon from "../assets/add_icon.svg";
 import menuIcon from "../assets/menu.svg";
-import addIcon from "../assets/add_icon.svg";
+import modifyIcon from "../assets/modify_icon.svg";
+import hidingIcon from "../assets/hiding_icon.svg";
 import deleteIcon from "../assets/delete_icon.svg";
-import downIcon from "../assets/hiding_down_icon.svg";
-import hideIcon from "../assets/hiding_icon.svg";
-import editIcon from "../assets/modify_icon.svg";
+import team_icon from "../assets/default_user_icon.svg";
+import hideIcon from "../assets/hiding_down_icon.svg";
+
+import symbol from "../assets/symbol.svg";
+import home from "../assets/home.svg";
+import in_home from "../assets/in_home.svg";
+import calendar from "../assets/calendar.svg";
+import in_calendar from "../assets/in_calendar.svg";
+import pen from "../assets/pen.svg";
+import in_pen from "../assets/in_pen.svg";
+import chat from "../assets/chat.svg";
+import in_chat from "../assets/in_chat.svg";
+import icon from "../assets/icon.svg";
+import in_icon from "../assets/in_icon.svg";
+import alarm from "../assets/alarm.svg";
+import setting from "../assets/setting.svg";
+import logo from "../assets/logo.svg";
 
 import { GlobalStyle } from "../pages/homePage";
 import { Menu } from "../pages/homePage";
@@ -28,309 +46,271 @@ const HeaderBar = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
   width: 100%;
-  padding: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: #f9f9f8;
-
-  @media (max-width: 480px) {
-    padding: 12px 16px;
-    gap: 12px;
-  }
+  margin: 10px;
 `;
-
 const SearchBox = styled.div`
-  flex: 1;
-  max-width: 826px;
   display: flex;
+  width: 826px;
   height: 52px;
-  padding: 0 20px 0 22px;
+  padding: 13px 20px 13px 22px;
+  justify-content: center;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+
   border-radius: 100px;
-  border: 1px solid #c0da58;
-  background: #fff;
+  border: 1px solid var(--Light-Green-2, #c0da58);
+  background: var(--white-1, #fff);
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-
-  @media (max-width: 480px) {
-    width: calc(100% - 120px);
-    min-width: 0;
-    height: 44px;
-  }
 `;
-
 const SearchInput = styled.input`
-  width: 100%;
+  width: 90%;
   height: 100%;
   border: none;
   outline: none;
-  font-size: 16px;
-
-  @media (max-width: 480px) {
-    font-size: 14px;
-  }
 `;
-
-const SearchIconImg = styled.img`
+const SearchIcon = styled.img`
   width: 24px;
   height: 24px;
+  aspect-ratio: 1/1;
+  margin-left: 10px;
   cursor: pointer;
-
-  @media (max-width: 480px) {
-    width: 20px;
-    height: 20px;
-  }
 `;
-
 const JoinButton = styled.button`
-  flex-shrink: 0;
-  width: 120px;
-  height: 52px;
-  border-radius: 100px;
-  border: 1px solid #c0da58;
-  background: #fff;
-  box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-  color: #111;
-  font-size: 16px;
-  font-weight: 500;
+  margin-right: 30px;
   cursor: pointer;
+  width: 157px;
+  height: 52px;
+  padding: 14px 43px 14px 44px;
+  justify-content: center;
+  align-items: center;
 
-  @media (max-width: 480px) {
-    width: 100px;
-    height: 44px;
-    font-size: 14px;
-  }
+  border-radius: 100px;
+  border: 1px solid var(--Light-Green-2, #c0da58);
+  background: var(--white-1, #fff);
+  box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
+  color: var(--black-1, #000);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
 `;
-
 const TeamBox = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 394px));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  padding: 20px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    padding: 12px 16px;
-    gap: 14px;
-  }
+  margin: 20px;
 `;
-
-const TeamBarContainer = styled.article`
+const TeamBarContainer = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  min-height: 350px;
-  padding: 26px 32px 30px;
+  width: 394px;
+  height: 418px;
+  padding: 10px;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+
   border-radius: 16px;
-  background: #fff;
+  background: var(--white-1, #fff);
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
 
   &:hover {
-    border: 1px solid #c0da58;
-    box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.3), 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-  }
-
-  @media (max-width: 480px) {
-    min-height: unset;
-    padding: 20px 20px 24px;
+    border-radius: 16px;
+    border: 1px solid var(--Light-Green-2, #C0DA58);
+    background: var(--white-1, #FFF);
+    box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.30), 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
   }
 `;
-
 const EllipsisIcon = styled.img`
   width: 24px;
   height: 24px;
+  justify-content: flex-end;
   margin-left: auto;
+  aspect-ratio: 1/1;
   cursor: pointer;
 `;
-
-const TeamBarTitle = styled.h2`
-  color: #111;
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.35;
-
-  @media (max-width: 480px) {
-    font-size: 20px;
-  }
-`;
-
-const DetailBox = styled.div`
+const TextBox = styled.div`
+  width: 80%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
 `;
-
-const LabelText = styled.span`
-  width: 44px;
-  color: #90a442;
+const TeamBarTitle = styled.span`
+  align-self: stretch;
+  color: var(--black-1, #000);
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+`;
+const DetailBox = styled.div``;
+const PeriodText = styled.span`
+  color: var(--Light-Green-3, #90a442);
+  font-family: Pretendard;
   font-size: 16px;
-  font-weight: 700;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
 `;
-
 const TeamDetailText = styled.span`
   margin-left: 12px;
-  color: #111;
+  color: var(--black-1, #000);
   font-size: 16px;
-  font-weight: 500;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
 `;
-
+const ChargeText = styled.span`
+  color: var(--Light-Green-3, #90a442);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+`;
 const ProgressText = styled.span`
-  color: #111;
-  text-align: right;
+  color: var(--black-1, #000);
+  text-align: center;
   font-size: 14px;
-  font-weight: 500;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin-left: 70%;
 `;
+const BarWapper = styled.div`
+  align-items: center;
 
+`;
 const ProgressBar = styled.div`
-  width: 100%;
+  width: 290px;
   height: 2px;
-  margin-top: 10px;
   background: #c9c9c8;
+  border-radius: 10px;
 `;
-
 const BarFill = styled.div`
-  width: ${({ $progress }) => Math.min(Math.max(Number($progress) || 0, 0), 100)}%;
+  align-items: center;
+  width: ${({ $progress }) => $progress}%;
   height: 3px;
   background: #c0da58;
+  border-radius: 40px;
 `;
-
-const DetailText = styled.button`
-  align-self: flex-end;
-  border: 0;
-  background: transparent;
-  color: #70716f;
+const DetailText = styled.span`
+  color: var(--Gray-7, #70716f);
   font-size: 14px;
-  font-weight: 700;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+
+  margin-left: 60%;
+  margin-top: 20px;
+
   cursor: pointer;
 
   &:hover {
-    color: #90a442;
+    color: var(--Light-Green-3, #90a442);
+    font-family: Pretendard;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
   }
 `;
-
 const CreateButton = styled.button`
   position: fixed;
-  right: 16px;
-  bottom: 80px;
-  width: 56px;
-  height: 56px;
+  right: 30px;
+  bottom: 30px;
+
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid #c0da58;
-  background: #fff;
+  border: none;
+
+  border-radius: 42.5px;
+  border: 1px solid var(--Light-Green-2, #c0da58);
+  background: var(--white-1, #fff);
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
   cursor: pointer;
-  z-index: 11;
-
-  @media (min-width: 481px) {
-    right: 30px;
-    bottom: 30px;
-    width: 64px;
-    height: 64px;
-  }
 `;
-
 const CreateIcon = styled.img`
   width: 24px;
   height: 24px;
 `;
-
 const MenuBox = styled.div`
   position: absolute;
-  top: 62px;
-  right: 28px;
+  top: 100px;
+  right: 50px;
   display: flex;
   width: 150px;
-  padding: 12px 13px;
+  height: 113px;
+  padding: 0 13px;
   flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
-  z-index: 3;
-`;
-
-const MenuWapper = styled.button`
-  display: flex;
-  align-items: center;
   justify-content: center;
-  border: 0;
-  background: transparent;
+  align-items: center;
+  gap: 10px;
+
+  border-radius: 12px;
+  background: var(--white-1, #fff);
+  box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+`;
+const MenuWapper = styled.div`
+  display: flex;
   cursor: pointer;
 `;
-
 const MenuIcon = styled.img`
   width: 20px;
   height: 20px;
+  aspect-ratio: 1/1;
 `;
-
 const MenuText = styled.span`
-  margin-left: 6px;
-  color: #111;
+  margin-left: 5px;
+  color: var(--black-1, #000);
+  font-family: Pretendard;
   font-size: 14px;
-  font-weight: 500;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
 `;
-
 const MenuLine = styled.div`
-  width: 100%;
+  width: 124px;
   height: 0.5px;
   background: #c9c9c8;
 `;
-
-const CardTop = styled.div`
+const Wapper = styled.div`
+  width: 80%;
   display: flex;
-  width: 100%;
+  justify-content: space-between;
 `;
-
-const HideWapper = styled.button`
-  position: fixed;
-  left: 16px;
-  bottom: 80px;
+const HideWapper = styled.div`
   display: flex;
+  position: fixed;
+  left: 150px;
+  bottom: 60px;
   align-items: center;
   gap: 6px;
-  border: 0;
-  background: transparent;
   cursor: pointer;
-  z-index: 11;
-
-  @media (min-width: 481px) {
-    left: 150px;
-    bottom: 30px;
-  }
 `;
-
 const HideText = styled.span`
-  color: #70716f;
+  color: var(--Gray-7, #70716F);
+  font-family: Pretendard;
   font-size: 18px;
-  font-weight: 500;
-
-  @media (max-width: 480px) {
-    font-size: 15px;
-  }
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
 `;
-
 const HideIcon = styled.img`
   width: 24px;
   height: 24px;
+  aspect-ratio: 1/1;
 `;
 
-const EmptyText = styled.p`
-  padding: 20px;
-  color: #70716f;
-`;
 
 export default function TeamPage() {
   const navigate = useNavigate();
@@ -396,68 +376,32 @@ export default function TeamPage() {
   ]);
 
   const [showHidden, setShowHidden] = useState(false);
+  const hiddenCount = teams.filter((t) => t.hidden).length;
+  const visibleTeams = teams.filter((t) => showHidden ? t.hidden : !t.hidden);
+
+
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  const menuRef = useRef();
   const [search, setSearch] = useState("");
-  const menuRef = useRef(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const hiddenCount = teams.filter((team) => team.hidden).length;
-  const visibleTeams = teams
-    .filter((team) => (showHidden ? team.hidden : !team.hidden))
-    .filter((team) => team.title.toLowerCase().includes(search.trim().toLowerCase()));
-
-    useEffect(() => {
-      const handleClick = (event) => {
-        if (menuRef.current && !menuRef.current.contains(event.target)) {
-          setOpenMenuId(null);
-        }
-      };
-      document.addEventListener("mousedown", handleClick);
-      return () => {
-        document.removeEventListener("mousedown", handleClick);
-        setOpenMenuId(null);
-      };
-    }, []);
-
-    useEffect(() => {
-      setOpenMenuId(null);
-    }, [location]);
 
   useEffect(() => {
-    if (!getAuthToken()) {
-      setError("로그인이 필요합니다.");
-      return;
-    }
-
-    const loadTeams = async () => {
-      setIsLoading(true);
-      try {
-        const data = await apiRequest("/api/teams");
-        setTeams(Array.isArray(data?.teams) ? data.teams.map(mapApiTeam) : []);
-        setError("");
-      } catch (err) {
-        setError(err.message || "프로젝트 목록을 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
       }
     };
-
-    loadTeams();
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleHide = (id) => {
-    setTeams((prev) => prev.map((team) => (team.id === id ? { ...team, hidden: true } : team)));
-    setOpenMenuId(null);
+  const handleSearch = () => {
+    console.log("검색어:", search);
   };
-
-  const handleDelete = async (id) => {
-    try {
-      await apiRequest(`/api/teams/${id}`, { method: "DELETE" });
-      setTeams((prev) => prev.filter((team) => team.id !== id));
-    } catch (err) {
-      alert(err.message || "프로젝트 삭제에 실패했습니다.");
-    }
+  const handleHide = (id) => {
+    setTeams((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, hidden: true } : t))
+    );
     setOpenMenuId(null);
   };
 
@@ -465,29 +409,36 @@ export default function TeamPage() {
     <>
       <GlobalStyle />
       <PageLayout>
-        <Menu />
+        <Menu>
+            <Symbol className="symbol" src={symbol} />
+            <Logo className="logo" src={logo} />
+            {menus.map((m) => (
+                <Item key={m.path} onClick={() => navigate(m.path)}>
+                    <Background $active={location.pathname === m.path} />
+                    <Icon src={location.pathname === m.path ? m.activeIcon : m.icon} />
+                    <Text className="text">{m.label}</Text>
+                </Item>
+            ))}
+            <Line />
+            <Item onClick={() => navigate("/notification")}><Icon src={alarm} /><Text className="text">NOTIFICATIONS</Text></Item>
+        </Menu>
         <ContentBox>
           <HeaderBar>
             <SearchBox>
               <SearchInput
                 type="search"
-                aria-label="프로젝트 검색"
-                placeholder="프로젝트 검색"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
               />
-              <SearchIconImg src={searchIcon} alt="" />
+              <SearchIcon src={searchIcon} onClick={handleSearch} />
             </SearchBox>
-
-            <JoinButton type="button" onClick={() => navigate("/team-join")}>
+            <JoinButton onClick={() => navigate("/team-join")}>
               참가하기
             </JoinButton>
           </HeaderBar>
-
-          {isLoading && <EmptyText>프로젝트를 불러오는 중입니다.</EmptyText>}
-          {error && <EmptyText>{error}</EmptyText>}
-          {!isLoading && !error && visibleTeams.length === 0 && <EmptyText>표시할 프로젝트가 없습니다.</EmptyText>}
-
           <TeamBox>
             {visibleTeams.map((team) => {
               const projectTasks = loadProjectTasks(team);
@@ -495,28 +446,35 @@ export default function TeamPage() {
 
               return (
               <TeamBarContainer key={team.id}>
-                <CardTop>
+                <Wapper>
                   <EllipsisIcon
                     src={menuIcon}
-                    alt="프로젝트 메뉴"
-                    onClick={() => setOpenMenuId((prev) => (prev === team.id ? null : team.id))}
+                    onClick={() =>
+                      setOpenMenuId((prev) =>
+                        prev === team.id ? null : team.id
+                      )
+                    }
                   />
-                </CardTop>
+                </Wapper>
 
                 {openMenuId === team.id && (
                   <MenuBox ref={menuRef}>
-                    <MenuWapper type="button" onClick={() => navigate("/team-modify", { state: { team }, from: "project" })}>
-                      <MenuIcon src={editIcon} alt="" />
+                    <MenuWapper onClick={() => navigate("/team-modify", {state: {team}, from: "project"})}>
+                      <MenuIcon src={modifyIcon} />
                       <MenuText>수정</MenuText>
                     </MenuWapper>
                     <MenuLine />
-                    <MenuWapper type="button" onClick={() => handleHide(team.id)}>
-                      <MenuIcon src={hideIcon} alt="" />
+                    <MenuWapper onClick={() => handleHide(team.id)}>
+                      <MenuIcon src={hidingIcon} />
                       <MenuText>숨김</MenuText>
                     </MenuWapper>
                     <MenuLine />
-                    <MenuWapper type="button" onClick={() => handleDelete(team.id)}>
-                      <MenuIcon src={deleteIcon} alt="" />
+                    <MenuWapper
+                      onClick={() =>
+                        setTeams((prev) => prev.filter((t) => t.id !== team.id))
+                      }
+                    >
+                      <MenuIcon src={deleteIcon} />
                       <MenuText>삭제</MenuText>
                     </MenuWapper>
                   </MenuBox>
@@ -541,27 +499,18 @@ export default function TeamPage() {
                   </ProgressBar>
                 </BarWapper>
 
-                <DetailText type="button" onClick={() => navigate("/detail-page", { state: { team } })}>
+                <DetailText onClick={() => navigate("/detail-page", {state: {team}})}>
                   자세히 보기
                 </DetailText>
               </TeamBarContainer>
             )})}
           </TeamBox>
-
-          <HideWapper type="button" onClick={() => setShowHidden((prev) => !prev)}>
-            <HideText>숨김 ({hiddenCount})</HideText>
-            <HideIcon
-              src={downIcon}
-              alt=""
-              style={{
-                transform: showHidden ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.2s",
-              }}
-            />
-          </HideWapper>
-
-          <CreateButton type="button" onClick={() => navigate("/team-create")}>
-            <CreateIcon src={addIcon} alt="프로젝트 생성" />
+          <HideWapper onClick={() => setShowHidden((prev) => !prev)}>
+              <HideText>숨김 ({hiddenCount})</HideText>
+              <HideIcon src={hideIcon} style={{ transform: showHidden ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+            </HideWapper>
+          <CreateButton onClick={() => navigate("/team-create")}>
+            <CreateIcon src={createIcon} />
           </CreateButton>
         </ContentBox>
       </PageLayout>
