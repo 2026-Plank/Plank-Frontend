@@ -41,6 +41,7 @@ import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 import { formatTeamCharge, formatTeamPeriod } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
+import { apiRequest, mapApiTeam } from "../utils/api";
 
 const HeaderBar = styled.header`
   display: flex;
@@ -310,6 +311,11 @@ const HideIcon = styled.img`
   height: 24px;
   aspect-ratio: 1/1;
 `;
+const EmptyText = styled.p`
+  margin: 40px 20px;
+  color: #70716f;
+  font-size: 16px;
+`;
 
 
 export default function TeamPage() {
@@ -324,56 +330,9 @@ export default function TeamPage() {
     { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
 ];
 
-  //프로젝트 더미 데이터
-  const [teams, setTeams] = useState([
-    {
-      id: 1,
-      title: "프로젝트 명",
-      period: "03/01 - 06/01",
-      code: "sdadadabhqci", //팀 코드
-      charge: "팀 프로젝트",
-      progress: 65,
-      description: "프로젝트 설명",
-      team_tasks: [
-        { id: 1, title: "아이디어 제작", assigneeName: "윤건", checked: true },
-        { id: 2, title: "프로토타입 제작", assigneeName: "박재영", checked: false },
-        { id: 3, title: "디자인 제작", assigneeName: "박미주", checked: false },
-      ],
-      members: [
-        {name: "윤건", join_team: ["기획자","개발자"]},
-        {name: "장시후", join_team: ["기획자", "개발자"]},
-        {name: "박재영", join_team: ["개발자"]},
-        {name: "윤다경", join_team: ["개발자"]},
-        {name: "박미주", join_team: ["디자이너"]},
-        {name: "이민지", join_team: ["디자이너"]},
-      ],
-      team_explan: [
-        {join_team: "기획자", explan: "아이디어 제작"},
-        {join_team: "기획자", explan: "구체적인 페이지 또는 기능 설명"},
-        {join_team: "개발자", explan: "디자인 피드백"},
-        {join_team: "개발자", explan: "프로토타입 제작"},
-        {join_team: "디자이너", explan: "페르소나 제작"},
-        {join_team: "디자이너", explan: "디자인 제작"},
-      ],
-      team_deadline: [
-        {join_team: "기획자", deadline: "03/01 - 04/01"},
-        {join_team: "개발자", deadline: "04/01 - 05/01"},
-        {join_team: "디자이너", deadline: "05/01 - 06/01"},
-      ],
-      hidden: false
-    },
-    {
-      id: 2,
-      title: "두 번째 프로젝트",
-      period: "04/01 - 07/01",
-      charge: "백엔드 개발",
-      progress: 30,
-      team_tasks: [
-        { id: 4, title: "API 명세 작성", assigneeName: "", checked: false },
-      ],
-      hidden: false
-    },
-  ]);
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [showHidden, setShowHidden] = useState(false);
   const hiddenCount = teams.filter((t) => t.hidden).length;
@@ -384,6 +343,24 @@ export default function TeamPage() {
 
   const menuRef = useRef();
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const loadTeams = async () => {
+      setLoading(true);
+      try {
+        const data = await apiRequest("/api/teams");
+        setTeams((data.teams || []).map(mapApiTeam));
+        setError("");
+      } catch (err) {
+        setError(err.message || "프로젝트를 불러오지 못했습니다.");
+        setTeams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeams();
+  }, []);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -439,6 +416,9 @@ export default function TeamPage() {
               참가하기
             </JoinButton>
           </HeaderBar>
+          {loading && <EmptyText>프로젝트를 불러오는 중입니다.</EmptyText>}
+          {!loading && error && <EmptyText>{error}</EmptyText>}
+          {!loading && !error && visibleTeams.length === 0 && <EmptyText>프로젝트가 없습니다.</EmptyText>}
           <TeamBox>
             {visibleTeams.map((team) => {
               const projectTasks = loadProjectTasks(team);

@@ -390,6 +390,7 @@ export default function ChatPage(){
     ];
 
     const isAlarmActive = location.pathname === "/notification";
+    const token = getToken();
 
     const [openMenu, setOpenMenu] = useState(false);
     const [currentState, setCurrentState] = useState(states[0]);
@@ -414,12 +415,12 @@ export default function ChatPage(){
 
     //챗 정보 더미데이터
     const [chatList, setChatList] = useState(
-        location.state?.chatList || [
+        token ? [] : (location.state?.chatList || [
             { id: 1, name: "박재영", charge: "디자이너", lastMsg: "넹", time: "1시간", state: "ONLINE" },
             { id: 2, name: "윤다경", charge: "개발자", lastMsg: "알겠습니다", time: "3시간", state: "IDLE" },
             { id: 3, name: "장시후", charge: "기획자", lastMsg: "네", time: "5시간", state: "DND" },
             { id: 4, name: "팀 프로젝트 A", charge: "그룹", lastMsg: "감사합니다", time: "14시간", state: "OFFLINE" },
-        ]
+        ])
     );
     // selectedChat도 삭제된 항목이면 첫번째로 초기화
     const [selectedChat, setSelectedChat] = useState(chatList[0]);
@@ -435,7 +436,6 @@ export default function ChatPage(){
     }});
 
     const chatBoxRef = useRef();
-    const token = getToken();
     const currentUser = getCurrentUser();
     const currentUserId = currentUser.id;
 
