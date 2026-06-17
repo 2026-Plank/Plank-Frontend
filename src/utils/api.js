@@ -1,5 +1,19 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+const normalizeApiMessage = (message) => {
+  const text = String(message || "");
+  if (
+    text.includes("NJS-") ||
+    text.includes("ECONNREFUSED") ||
+    text.includes("DPI-") ||
+    text.includes("ORA-12170") ||
+    text.includes("ORA-125")
+  ) {
+    return "데이터베이스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+  }
+  return text;
+};
+
 export const getAuthToken = () => localStorage.getItem("token");
 
 export const setAuthSession = ({ token, user }) => {
@@ -43,7 +57,7 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok || !data) {
-    const message = data?.error || data?.message || "서버에서 빈 응답을 받았습니다.";
+    const message = normalizeApiMessage(data?.message || data?.error || "서버에서 빈 응답을 받았습니다.");
     const error = new Error(message);
     error.status = response.status;
     error.data = data;
