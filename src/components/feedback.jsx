@@ -38,14 +38,6 @@ const TextArea = styled.textarea`
     resize: vertical;
 `;
 
-const RatingSelect = styled.select`
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-bottom: 20px;
-`;
-
 const ButtonGroup = styled.div`
     display: flex;
     justify-content: space-between;
@@ -69,9 +61,8 @@ const CancelButton = styled(Button)`
     color: black;
 `;
 
-export default function FeedbackForm({ toUserId, teamId, onClose, onSubmit }) {
+export default function FeedbackForm({ teamId, onClose, onSubmit }) {
     const [content, setContent] = useState("");
-    const [rating, setRating] = useState(5);
 
     const handleSubmit = async () => {
         if (!content.trim()) {
@@ -83,13 +74,11 @@ export default function FeedbackForm({ toUserId, teamId, onClose, onSubmit }) {
             await apiRequest("/api/feedbacks", {
                 method: "POST",
                 body: JSON.stringify({
-                    toUserId,
                     teamId,
-                    content,
-                    rating: parseInt(rating)
+                    content
                 }),
             });
-            alert("피드백이 작성되었습니다.");
+            alert("피드백이 등록되었습니다.");
             onSubmit?.();
             onClose();
         } catch (err) {
@@ -101,22 +90,15 @@ export default function FeedbackForm({ toUserId, teamId, onClose, onSubmit }) {
     return (
         <FeedbackModal onClick={onClose}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
-                <Title>피드백 작성</Title>
+                <Title>피드백 남기기</Title>
                 <TextArea
-                    placeholder="피드백 내용을 입력하세요..."
+                    placeholder="프로젝트에 남길 내용을 입력하세요..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                 />
-                <RatingSelect value={rating} onChange={(e) => setRating(e.target.value)}>
-                    <option value={1}>1점</option>
-                    <option value={2}>2점</option>
-                    <option value={3}>3점</option>
-                    <option value={4}>4점</option>
-                    <option value={5}>5점</option>
-                </RatingSelect>
                 <ButtonGroup>
                     <CancelButton onClick={onClose}>취소</CancelButton>
-                    <SubmitButton onClick={handleSubmit}>제출</SubmitButton>
+                    <SubmitButton onClick={handleSubmit}>등록</SubmitButton>
                 </ButtonGroup>
             </ModalContent>
         </FeedbackModal>

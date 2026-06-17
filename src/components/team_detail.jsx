@@ -231,6 +231,36 @@ const FeedbackButton = styled.button`
     padding: 4px 6px;
     cursor: pointer;
 `;
+const FeedbackHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
+const FeedbackList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 3.5%;
+    width: min(760px, 86%);
+`;
+const FeedbackItem = styled.div`
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #F8F8F8;
+`;
+const FeedbackMeta = styled.div`
+    display: flex;
+    gap: 8px;
+    color: #70716F;
+    font-size: 13px;
+    margin-bottom: 6px;
+`;
+const FeedbackContent = styled.div`
+    color: #000;
+    font-size: 17px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+`;
 const EmptyText = styled.span`
     color: var(--Gray-7, #70716F);
     font-family: Pretendard;
@@ -451,6 +481,18 @@ const EmptyTaskText = styled.span`
     padding: 8px 0;
 `;
 
+const formatFeedbackTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("ko-KR", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
 const getPeriodParts = (period) => {
     const text = String(period || "").trim();
     if (!text) return [formatToday(), ""];
@@ -562,8 +604,19 @@ export default function TeamDetailCreatePage(){
     const [taskTitle, setTaskTitle] = useState("");
     const [taskAssignee, setTaskAssignee] = useState("");
     const [editingTaskId, setEditingTaskId] = useState(null);
-    const [feedbackTarget, setFeedbackTarget] = useState(null);
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const [feedbacks, setFeedbacks] = useState([]);
     const progress = calculateProgress(tasks, 0);
+
+    const loadFeedbacks = async () => {
+        if (!team.id) return;
+        const data = await apiRequest(`/api/feedbacks/team/${team.id}`);
+        setFeedbacks(data.feedbacks || []);
+    };
+
+    useEffect(() => {
+        loadFeedbacks().catch(() => setFeedbacks([]));
+    }, [team.id]);
 
     const updateTasks = (nextTasks) => {
         setTasks(nextTasks);
@@ -701,11 +754,11 @@ export default function TeamDetailCreatePage(){
     return(
         <>
             <GlobalStyle />
-            {feedbackTarget && (
+            {feedbackOpen && (
                 <FeedbackForm
-                    toUserId={feedbackTarget.userPk ?? feedbackTarget.id}
                     teamId={team.id}
-                    onClose={() => setFeedbackTarget(null)}
+                    onClose={() => setFeedbackOpen(false)}
+                    onSubmit={loadFeedbacks}
                 />
             )}
             <PageLayout>
@@ -782,7 +835,6 @@ export default function TeamDetailCreatePage(){
                                         <MemberBox key={index}>
                                             <UserIcon src={user_icon} />
                                             <UserName>{member.name}</UserName>
-                                            <FeedbackButton type="button" onClick={() => setFeedbackTarget(member)}>피드백</FeedbackButton>
                                             <DeleteIcon src={delete_icon} onClick={() => DeleteMember(index)} />
                                         </MemberBox>
                                     ))
@@ -869,6 +921,28 @@ export default function TeamDetailCreatePage(){
                                     )}
                                 </TaskList>
                             </TaskPanel>
+                        </BottomWapper>
+                        <BottomWapper>
+                            <FeedbackHeader>
+                                <TextWapper>
+                                    <VerticalLine />
+                                    <DescriptionText>피드백</DescriptionText>
+                                </TextWapper>
+                                <FeedbackButton type="button" onClick={() => setFeedbackOpen(true)}>+</FeedbackButton>
+                            </FeedbackHeader>
+                            <FeedbackList>
+                                {feedbacks.length > 0 ? feedbacks.map((feedback) => (
+                                    <FeedbackItem key={feedback.id}>
+                                        <FeedbackMeta>
+                                            <span>{feedback.fromUser?.name || feedback.fromUser?.userid || "알 수 없는 사용자"}</span>
+                                            <span>{formatFeedbackTime(feedback.createdAt)}</span>
+                                        </FeedbackMeta>
+                                        <FeedbackContent>{feedback.content}</FeedbackContent>
+                                    </FeedbackItem>
+                                )) : (
+                                    <EmptyTaskText>아직 등록된 피드백이 없습니다.</EmptyTaskText>
+                                )}
+                            </FeedbackList>
                         </BottomWapper>
                     </Wapper>
                 </ContentBox>

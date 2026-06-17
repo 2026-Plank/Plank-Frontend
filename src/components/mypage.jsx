@@ -642,16 +642,15 @@ export default function MyPage() {
                     <Grid style={{ marginTop: "24px" }}>
                         <Card>
                             <CardTitle>내가 받은 피드백</CardTitle>
-                            <CardSub>개인 피드백과 팀 피드백이 함께 보입니다.</CardSub>
+                            <CardSub>프로젝트에 남겨진 피드백을 확인할 수 있어요.</CardSub>
                             {receivedFeedbacks.length ? (
                                 <List>
                                     {receivedFeedbacks.map((feedback) => (
                                         <FeedbackCard key={feedback.id}>
                                             <FeedbackHead>
                                                 <FeedbackTitle>{feedback.fromUser?.name || feedback.fromUser?.userid || "알 수 없는 사용자"}</FeedbackTitle>
-                                                <FeedbackTitle>{feedback.rating}/5</FeedbackTitle>
                                             </FeedbackHead>
-                                            <FeedbackMeta>{feedback.category === "team" ? "팀원 피드백" : "개인 피드백"}</FeedbackMeta>
+                                            <FeedbackMeta>프로젝트 피드백</FeedbackMeta>
                                             <FeedbackBody>{feedback.content}</FeedbackBody>
                                         </FeedbackCard>
                                     ))}
@@ -669,10 +668,9 @@ export default function MyPage() {
                                     {sentFeedbacks.map((feedback) => (
                                         <FeedbackCard key={feedback.id}>
                                             <FeedbackHead>
-                                                <FeedbackTitle>{feedback.toUser?.name || feedback.toUser?.userid || "알 수 없는 사용자"}</FeedbackTitle>
-                                                <FeedbackTitle>{feedback.rating}/5</FeedbackTitle>
+                                                <FeedbackTitle>내가 남김</FeedbackTitle>
                                             </FeedbackHead>
-                                            <FeedbackMeta>{feedback.category === "team" ? "팀원 피드백" : "개인 피드백"}</FeedbackMeta>
+                                            <FeedbackMeta>프로젝트 피드백</FeedbackMeta>
                                             <FeedbackBody>{feedback.content}</FeedbackBody>
                                         </FeedbackCard>
                                     ))}
