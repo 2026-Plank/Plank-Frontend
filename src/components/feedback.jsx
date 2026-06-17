@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { useState } from "react";
+import { apiRequest } from "../utils/api";
 
 const FeedbackModal = styled.div`
     position: fixed;
@@ -79,13 +80,8 @@ export default function FeedbackForm({ toUserId, teamId, onClose, onSubmit }) {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch("/api/feedbacks", {
+            await apiRequest("/api/feedbacks", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     toUserId,
                     teamId,
@@ -93,18 +89,12 @@ export default function FeedbackForm({ toUserId, teamId, onClose, onSubmit }) {
                     rating: parseInt(rating)
                 }),
             });
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                alert("피드백 작성 실패: " + (errorData.error || "알 수 없는 오류"));
-            } else {
-                alert("피드백이 작성되었습니다.");
-                onSubmit();
-                onClose();
-            }
+            alert("피드백이 작성되었습니다.");
+            onSubmit?.();
+            onClose();
         } catch (err) {
             console.error(err);
-            alert("피드백 작성 중 오류 발생");
+            alert("피드백 작성 실패: " + (err.message || "알 수 없는 오류"));
         }
     };
 

@@ -38,6 +38,7 @@ import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 import { formatTeamPeriod } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks, saveProjectTasks } from "../utils/projectTasks";
+import FeedbackForm from "./feedback";
 
 //css
 export const TextLine = styled.div`
@@ -295,6 +296,16 @@ const MemberRow = styled.div`
 	align-items: center;
 
 `;
+const FeedbackButton = styled.button`
+	margin-left: 4px;
+	padding: 4px 8px;
+	border: none;
+	border-radius: 6px;
+	background: #F0F0F0;
+	color: #575856;
+	font-size: 13px;
+	cursor: pointer;
+`;
 const ProgressSummary = styled.div`
 	display: flex;
 	align-items: center;
@@ -474,6 +485,7 @@ export default function TeamDetailPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [assigneeName, setAssigneeName] = useState("");
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [feedbackTarget, setFeedbackTarget] = useState(null);
   const progress = calculateProgress(tasks, 0);
 
   const updateTasks = (nextTasks) => {
@@ -538,6 +550,13 @@ export default function TeamDetailPage() {
   return (
     <>
 		<GlobalStyle />
+		{feedbackTarget && (
+			<FeedbackForm
+				toUserId={feedbackTarget.userPk ?? feedbackTarget.id}
+				teamId={team.id}
+				onClose={() => setFeedbackTarget(null)}
+			/>
+		)}
     	<PageLayout>
         	<Menu>
           		<Symbol className="symbol" src={symbol} />
@@ -588,6 +607,7 @@ export default function TeamDetailPage() {
 								<MemberRow key={index}>
 									<UserIcon src={user_icon} />
 									<NameText>{member.name}</NameText>
+									<FeedbackButton type="button" onClick={() => setFeedbackTarget(member)}>피드백</FeedbackButton>
 								</MemberRow>
 							))
 							) : (

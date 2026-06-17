@@ -69,6 +69,7 @@ import { ExplanText } from "./detail_page";
 import { apiRequest, mapApiTeam, toApiDate } from "../utils/api";
 import { formatTeamPeriod, formatToday } from "../utils/teamDisplay";
 import { calculateProgress, loadProjectTasks, saveProjectTasks } from "../utils/projectTasks";
+import FeedbackForm from "./feedback";
 //css
 const TeamIcon = styled.img`
     width: 28px;
@@ -220,6 +221,15 @@ const UserName = styled.span`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+`;
+const FeedbackButton = styled.button`
+    border: none;
+    border-radius: 6px;
+    background: #F8F8F8;
+    color: #575856;
+    font-size: 12px;
+    padding: 4px 6px;
+    cursor: pointer;
 `;
 const EmptyText = styled.span`
     color: var(--Gray-7, #70716F);
@@ -552,6 +562,7 @@ export default function TeamDetailCreatePage(){
     const [taskTitle, setTaskTitle] = useState("");
     const [taskAssignee, setTaskAssignee] = useState("");
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [feedbackTarget, setFeedbackTarget] = useState(null);
     const progress = calculateProgress(tasks, 0);
 
     const updateTasks = (nextTasks) => {
@@ -690,6 +701,13 @@ export default function TeamDetailCreatePage(){
     return(
         <>
             <GlobalStyle />
+            {feedbackTarget && (
+                <FeedbackForm
+                    toUserId={feedbackTarget.userPk ?? feedbackTarget.id}
+                    teamId={team.id}
+                    onClose={() => setFeedbackTarget(null)}
+                />
+            )}
             <PageLayout>
                 <Menu>
                     <Symbol className="symbol" src={symbol} />
@@ -764,6 +782,7 @@ export default function TeamDetailCreatePage(){
                                         <MemberBox key={index}>
                                             <UserIcon src={user_icon} />
                                             <UserName>{member.name}</UserName>
+                                            <FeedbackButton type="button" onClick={() => setFeedbackTarget(member)}>피드백</FeedbackButton>
                                             <DeleteIcon src={delete_icon} onClick={() => DeleteMember(index)} />
                                         </MemberBox>
                                     ))
