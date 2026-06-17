@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { useNavigate } from "react-router-dom";
 
@@ -20,6 +20,7 @@ import week_right from '../assets/week_right.svg';
 import addIcon from '../assets/add.svg';
 import editIcon from '../assets/edit.svg';
 import deleteIcon from '../assets/delete.svg';
+import { apiRequest } from "../utils/api";
 
 export const GlobalStyle = createGlobalStyle`
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
@@ -63,7 +64,21 @@ const LeftPanel = styled.div` border-right: 1px solid #EDEDED; padding: 60px 35p
 const MiddlePanel = styled.div` padding: 60px 80px; overflow-y: auto; `;
 
 /* --- Mini Calendar & UI Components --- */
-const MiniCalendar = ({ currentViewDate, setCurrentViewDate }) => {
+const toDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+const formatCardDate = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value).slice(-2);
+    return String(date.getDate()).padStart(2, "0");
+};
+
+const MiniCalendar = ({ currentViewDate, setCurrentViewDate, calendarMarks }) => {
     const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const year = currentViewDate.getFullYear();
@@ -73,7 +88,10 @@ const MiniCalendar = ({ currentViewDate, setCurrentViewDate }) => {
     const prevLast = new Date(year, month, 0).getDate();
     const dateArray = [];
     for (let i = firstDay - 1; i >= 0; i--) dateArray.push({ d: prevLast - i, current: false, other: true });
-    for (let i = 1; i <= daysInMonth; i++) dateArray.push({ d: i, current: [15, 17, 20].includes(i), other: false });
+    for (let i = 1; i <= daysInMonth; i++) {
+        const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+        dateArray.push({ d: i, current: Boolean(calendarMarks?.[key]), other: false });
+    }
     while (dateArray.length < 42) dateArray.push({ d: dateArray.length - (firstDay + daysInMonth) + 1, current: false, other: true });
 
     return (
@@ -109,6 +127,7 @@ const ActionItem = styled.div` display: flex; align-items: center; gap: 10px; pa
 const TaskRow = styled.div` display: flex; align-items: center; margin-bottom: 18px; `;
 const CustomCheckBox = styled.div` width: 20px; height: 20px; border-radius: 6px; margin-right: 15px; cursor: pointer; background-color: ${p => p.$deleteMode ? "#FF6B6B" : p.$checked ? "#C0DA58" : "#E2E2E2"}; transition: 0.2s; `;
 const EditInput = styled.input` border: none; border-bottom: 1px solid #C0DA58; outline: none; font-size: 17px; font-weight: 500; width: 100%; `;
+const EmptyText = styled.div` color: #AAA; font-size: 15px; margin: 8px 0 18px; `;
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -121,16 +140,49 @@ export default function HomePage() {
     const [addingTo, setAddingTo] = useState(null);
     const [editingId, setEditingId] = useState(null);
 
-    const [projects, setProjects] = useState([
-        { id: 1, text: "[UIUX 개선 프로젝트] 기획서 작성", checked: true },
-        { id: 2, text: "[UIUX 개선 프로젝트] 그래픽 디자인", checked: false },
-        { id: 3, text: "[키오스크 개선 프로젝트] 휴리스틱 평가", checked: false },
-    ]);
-    const [todos, setTodos] = useState([
-        { id: 4, text: "[시각디자인] 주제선정", checked: true },
-        { id: 5, text: "[시각디자인] 브랜드 핵심가치", checked: true },
-        { id: 6, text: "[DD] 기존 모바일 앱 분석", checked: false },
-    ]);
+    const [profileInfo, setProfileInfo] = useState({ name: "사용자", job: "" });
+    const [calendarMarks, setCalendarMarks] = useState({});
+    const [upcomingSchedules, setUpcomingSchedules] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [todos, setTodos] = useState([]);
+    const [loadError, setLoadError] = useState("");
+
+    useEffect(() => {
+        const loadHomeDashboard = async () => {
+            try {
+                const data = await apiRequest("/api/home");
+                const user = data.user || {};
+                const projectItems = (data.projects || []).map((project) => ({
+                    id: `project-${project.id}`,
+                    text: `[${project.name}] ${project.done || 0}/${project.total || 0} 완료`,
+                    checked: Number(project.total || 0) > 0 && Number(project.done || 0) >= Number(project.total || 0),
+                }));
+                const todayItems = (data.todaySchedules || []).map((schedule) => ({
+                    id: `schedule-${schedule.id}`,
+                    text: `[${schedule.dpName || schedule.type || "일정"}] ${schedule.title}`,
+                    checked: schedule.status === "Done",
+                }));
+
+                setProfileInfo({
+                    name: user.name || user.userid || "사용자",
+                    job: user.profile || user.department || "",
+                });
+                setProjects(projectItems);
+                setTodos(todayItems);
+                setUpcomingSchedules((data.upcomingSchedules || []).slice(0, 3));
+                setCalendarMarks(data.calendarMarks || {});
+                setLoadError("");
+            } catch (error) {
+                setProjects([]);
+                setTodos([]);
+                setUpcomingSchedules([]);
+                setCalendarMarks({});
+                setLoadError(error.message || "홈 데이터를 불러오지 못했습니다.");
+            }
+        };
+
+        loadHomeDashboard();
+    }, []);
 
     const getWeekLabel = (startDate) => {
         const d = new Date(startDate); d.setDate(d.getDate() + 3);
@@ -141,7 +193,7 @@ export default function HomePage() {
 
     const weekDates = Array.from({ length: 6 }, (_, i) => {
         const d = new Date(weekStartDate); d.setDate(weekStartDate.getDate() + i);
-        return { day: d.getDate(), full: d.toDateString(), event: [15, 17, 20].includes(d.getDate()) };
+        return { day: d.getDate(), full: d.toDateString(), event: Boolean(calendarMarks[toDateKey(d)]) };
     });
 
     const handleBoxClick = (id, section) => {
@@ -190,15 +242,16 @@ export default function HomePage() {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <img src={profile} style={{ width: 80, height: 80, borderRadius: '50%' }} alt="p" />
                         <div style={{ marginLeft: 15 }}>
-                            <div style={{ fontSize: 22, fontWeight: 700 }}>이민지</div>
-                            <div style={{ color: '#999', fontSize: 14 }}>디자이너</div>
+                            <div style={{ fontSize: 22, fontWeight: 700 }}>{profileInfo.name}</div>
+                            <div style={{ color: '#999', fontSize: 14 }}>{profileInfo.job || "프로필"}</div>
                         </div>
                     </div>
-                    <MiniCalendar currentViewDate={currentViewDate} setCurrentViewDate={setCurrentViewDate} />
+                    <MiniCalendar currentViewDate={currentViewDate} setCurrentViewDate={setCurrentViewDate} calendarMarks={calendarMarks} />
                     <div style={{ marginTop: '30px' }}>
-                        {[15, 18, 20].map(d => (
-                            <Card key={d}><CardDate>{d}</CardDate><div style={{marginLeft:20}}><div style={{fontSize:14, fontWeight:600}}>프로젝트 업무</div><div style={{fontSize:12, color:'#AAA'}}>세부 내용</div></div></Card>
+                        {upcomingSchedules.map(item => (
+                            <Card key={item.id}><CardDate>{formatCardDate(item.targetDate)}</CardDate><div style={{marginLeft:20}}><div style={{fontSize:14, fontWeight:600}}>{item.title}</div><div style={{fontSize:12, color:'#AAA'}}>{item.dpName || item.type}</div></div></Card>
                         ))}
+                        {!upcomingSchedules.length && <EmptyText>{loadError || "예정된 일정이 없습니다."}</EmptyText>}
                     </div>
                 </LeftPanel>
 
@@ -226,6 +279,10 @@ export default function HomePage() {
                                     </ActionPopup>
                                 )}
                             </TaskHeader>
+                            {loadError && section === 'project' && <EmptyText>{loadError}</EmptyText>}
+                            {!loadError && (section === 'project' ? projects : todos).length === 0 && (
+                                <EmptyText>{section === 'project' ? "진행 중인 프로젝트 업무가 없습니다." : "오늘 할 일이 없습니다."}</EmptyText>
+                            )}
                             {(section === 'project' ? projects : todos).map(item => (
                                 <TaskRow key={item.id} onClick={(e) => e.stopPropagation()}>
                                     <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />

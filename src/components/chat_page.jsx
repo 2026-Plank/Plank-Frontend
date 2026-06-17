@@ -36,6 +36,7 @@ import { Text } from "../pages/homePage";
 import { Line } from "../pages/homePage";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
+import { API_BASE_URL, apiRequest } from "../utils/api";
 
 //css
 export const Layout = styled.div`
@@ -377,6 +378,11 @@ const saveLocalMessages = (messages) => {
     window.dispatchEvent(new CustomEvent("plank-local-chat-sync", { detail: messages }));
 };
 
+const getChatKey = (chatTarget) => {
+    if (!chatTarget) return "";
+    return `${chatTarget.apiType || "local"}:${chatTarget.id}`;
+};
+
 export default function ChatPage(){
     const navigate = useNavigate();
     const location = useLocation();
@@ -423,7 +429,7 @@ export default function ChatPage(){
         ])
     );
     // selectedChat도 삭제된 항목이면 첫번째로 초기화
-    const [selectedChat, setSelectedChat] = useState(chatList[0]);
+    const [selectedChat, setSelectedChat] = useState(chatList[0] || null);
 
     const [allMessages, setAllMessages] = useState(() => {
         const saved = loadLocalMessages();
@@ -447,12 +453,7 @@ export default function ChatPage(){
 
     const loadConversations = async () => {
         if (!token) return;
-        const res = await fetch("/api/chats/conversations", {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-
-        const data = await res.json();
+        const data = await apiRequest("/api/chats/conversations");
         const direct = (data.conversations || []).map((item) => ({
             id: item.userId,
             apiType: "direct",
@@ -483,14 +484,10 @@ export default function ChatPage(){
         const url = chatTarget.apiType === "group"
             ? `/api/chats/groups/${chatTarget.id}/messages`
             : `/api/chats/${chatTarget.id}`;
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await apiRequest(url);
         setAllMessages((prev) => ({
             ...prev,
-            [chatTarget.id]: data.map((message) => mapApiMessage(message, currentUserId)),
+            [getChatKey(chatTarget)]: data.map((message) => mapApiMessage(message, currentUserId)),
         }));
     };
 
@@ -505,21 +502,23 @@ export default function ChatPage(){
     useEffect(() => {
         if (!token) return;
 
-        const events = new EventSource(`/api/chats/events?token=${encodeURIComponent(token)}`);
+        const events = new EventSource(`${API_BASE_URL}/api/chats/events?token=${encodeURIComponent(token)}`);
         const handleMessage = (event) => {
             const message = JSON.parse(event.data);
             const targetId = message.groupId || (Number(message.senderId) === Number(currentUserId) ? message.receiverId : message.senderId);
+            const targetType = message.groupId ? "group" : "direct";
+            const targetKey = `${targetType}:${targetId}`;
 
             setAllMessages((prev) => {
-                const current = prev[targetId] || [];
+                const current = prev[targetKey] || [];
                 if (current.some((item) => item.id === message.id)) return prev;
                 return {
                     ...prev,
-                    [targetId]: [...current, mapApiMessage(message, currentUserId)],
+                    [targetKey]: [...current, mapApiMessage(message, currentUserId)],
                 };
             });
             setChatList((prev) => prev.map((item) => (
-                Number(item.id) === Number(targetId)
+                item.apiType === targetType && Number(item.id) === Number(targetId)
                     ? { ...item, lastMsg: message.message, time: formatMessageTime(message.timestamp) }
                     : item
             )));
@@ -558,7 +557,7 @@ export default function ChatPage(){
     }, [token]);
     
     const SendChat = async () => {
-        if(sendChat.trim() === "") return;
+        if(sendChat.trim() === "" || !selectedChat) return;
         const text = sendChat.trim();
         setSendChat("");
 
@@ -570,35 +569,30 @@ export default function ChatPage(){
                 ? { message: text }
                 : { receiverId: selectedChat.id, message: text };
 
-            const res = await fetch(url, {
+            const data = await apiRequest(url, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify(body),
             });
-            if (res.ok) {
-                const data = await res.json();
-                const chat = data.chat;
-                setAllMessages(prev => {
-                    const current = prev[selectedChat.id] || [];
-                    if (current.some((item) => item.id === chat.id)) return prev;
-                    return {
-                        ...prev,
-                        [selectedChat.id]: [...current, mapApiMessage(chat, currentUserId)]
-                    };
-                });
-                setChatList(prev => prev.map(item => item.id === selectedChat.id ? { ...item, lastMsg: text, time: formatMessageTime(chat.timestamp) } : item));
-            }
+            const chat = data.chat;
+            const chatKey = getChatKey(selectedChat);
+            setAllMessages(prev => {
+                const current = prev[chatKey] || [];
+                if (current.some((item) => item.id === chat.id)) return prev;
+                return {
+                    ...prev,
+                    [chatKey]: [...current, mapApiMessage(chat, currentUserId)]
+                };
+            });
+            setChatList(prev => prev.map(item => item.id === selectedChat.id && item.apiType === selectedChat.apiType ? { ...item, lastMsg: text, time: formatMessageTime(chat.timestamp) } : item));
             return;
         }
 
         const now = new Date();
         const time = formatMessageTime(now);
+        const chatKey = getChatKey(selectedChat);
         const nextMessages = {
             ...allMessages,
-            [selectedChat.id]: [...(allMessages[selectedChat.id] || []), { id: Date.now(), text, isMine: true, time }]
+            [chatKey]: [...(allMessages[chatKey] || []), { id: Date.now(), text, isMine: true, time }]
         };
         setAllMessages(nextMessages);
         saveLocalMessages(nextMessages);
@@ -681,7 +675,7 @@ export default function ChatPage(){
                                 {/* 이게 chatlist 변경시 바뀌는 내용 */}
                                 <UserBox>
                                     {chatList.map((item) => (
-                                        <ChatItem key={item.id} onClick={() => setSelectedChat(item)}>
+                                        <ChatItem key={`${item.apiType || "local"}-${item.id}`} onClick={() => setSelectedChat(item)}>
                                             <ChatItemIconWrapper>
                                                 <UserIcon $size={60} src={user_icon} />
                                             </ChatItemIconWrapper>
@@ -702,17 +696,21 @@ export default function ChatPage(){
                             <RightBox>
                                 {/* 여기가 채팅 사용자의 정보가 들어가야됨. */}
                                 <TopBox>
-                                    <UserWapper>
-                                        <UserIcon $size={60} src={user_icon} />
-                                        <UserName>{selectedChat.name}</UserName>
-                                        <UserCharge>{selectedChat.charge}</UserCharge>
-                                    </UserWapper>
-                                    <MenuIcon src={menu} onClick={() => navigate("/chatinfo", {state: {selectedChat, chatList}})} />
+                                    {selectedChat ? (
+                                        <UserWapper>
+                                            <UserIcon $size={60} src={user_icon} />
+                                            <UserName>{selectedChat.name}</UserName>
+                                            <UserCharge>{selectedChat.charge}</UserCharge>
+                                        </UserWapper>
+                                    ) : (
+                                        <UserName>채팅방 없음</UserName>
+                                    )}
+                                    {selectedChat && <MenuIcon src={menu} onClick={() => navigate("/chatinfo", {state: {selectedChat, chatList}})} />}
                                 </TopBox>
                                 <HorizontalLine $length={100} />
                                 {/* 메세지 창 */}
                                 <ChatBox ref={chatBoxRef}>
-                                    {(allMessages[selectedChat.id] || []).map((msg) => (
+                                    {(selectedChat ? allMessages[getChatKey(selectedChat)] || allMessages[selectedChat.id] || [] : []).map((msg) => (
                                         <MessageRow key={msg.id} $isMine={msg.isMine}>
                                             {!msg.isMine && <UserIcon $size={60} src={user_icon} />}
                                             {!msg.isMine && <BubbleBox $isMine={msg.isMine}>
