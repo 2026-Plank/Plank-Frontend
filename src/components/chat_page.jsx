@@ -402,6 +402,7 @@ const MessageInput = styled.input`
     border: 0;
     outline: 0;
     min-width: 0;
+    font-size: 16px;
 `;
 export const NameWapper = styled.div`
     display: flex;
