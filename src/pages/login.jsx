@@ -20,6 +20,11 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0 20px;
+    box-sizing: border-box;
 `
 
 const Logo = styled.img`
@@ -27,15 +32,24 @@ const Logo = styled.img`
     height: 136px;
     margin-top: 5%;
     margin-bottom: 50px;
+
+    @media (max-width: 480px) {
+        width: 200px;
+        height: auto;
+        margin-top: 40px;
+        margin-bottom: 60px;
+    }
 `
 
 const InputWrapper = styled.div`
     position: relative;
-    width: 538px;
+    width: 100%;
+    max-width: 538px;
     margin-top: 30px;
     border-radius: 16px;
     box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.09);
     transition: all 0.2s ease;
+    box-sizing: border-box;
 
     &:focus-within {
         box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.5);
@@ -43,6 +57,11 @@ const InputWrapper = styled.div`
 
     &:focus-within label {
         color: #C0DA58;
+    }
+
+    @media (max-width: 480px) {
+        margin-top: 16px;
+        border-radius: 12px;
     }
 `
 
@@ -55,6 +74,13 @@ const Input = styled.input`
     font-size: 22px;
     padding: 25px;
     background: transparent;
+
+    @media (max-width: 480px) {
+        height: 60px;
+        border-radius: 12px;
+        font-size: 16px;
+        padding: 16px;
+    }
 `
 
 const Label = styled.label`
@@ -66,6 +92,11 @@ const Label = styled.label`
     font-size: 16px;
     pointer-events: none;
     transition: all 0.2s ease;
+
+    @media (max-width: 480px) {
+        left: 16px;
+        font-size: 14px;
+    }
 `
 
 const FloatingWrapper = styled(InputWrapper)`
@@ -74,11 +105,20 @@ const FloatingWrapper = styled(InputWrapper)`
         top: 15px;
         font-size: 12px;
     }
+
+    @media (max-width: 480px) {
+        input:focus + label,
+        input:not(:placeholder-shown) + label {
+            top: 8px;
+            font-size: 10px;
+        }
+    }
 `
 
 // 🔥 버튼으로 변경 (중요)
 const LoginButton = styled.button`
-    width: 538px;
+    width: 100%;
+    max-width: 538px;
     height: 90px;
     border-radius: 16px;
     margin-top: 30px;
@@ -87,6 +127,13 @@ const LoginButton = styled.button`
     background-color: ${({ disabled }) => disabled ? '#ccc' : '#C0DA58'};
     border: none;
     cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+
+    @media (max-width: 480px) {
+        height: 56px;
+        border-radius: 12px;
+        margin-top: 40px;
+        font-size: 18px;
+    }
 `
 
 const LinkGroup = styled.div`
@@ -103,6 +150,10 @@ const SubLink = styled(Link)`
 
     &:hover {
         text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 14px;
     }
 `
 
@@ -137,12 +188,12 @@ export default function Login() {
 
             setAuthSession({ token: data.token, user: data.user });
             alert('로그인 성공');
-            navigate('/homePage');
+            navigate('/homepage');
         } catch (error) {
             if (id === 'test' && password === '1234') {
                 localStorage.setItem("user", JSON.stringify({ id: "test", name: "테스트" }));
                 alert('로그인 성공');
-                navigate('/homePage');
+                navigate('/homepage');
                 return;
             }
             alert(error.message || '아이디 또는 비밀번호가 틀렸습니다');
