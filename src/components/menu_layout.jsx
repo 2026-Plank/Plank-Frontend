@@ -109,7 +109,7 @@ export default function MenuLayout() {
     const location = useLocation(); // ★ 선언문 추가
 
     const menus = [
-        { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
+        { path: "/homepage", icon: home, activeIcon: in_home, label: "HOME" },
         { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
         { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
         { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },

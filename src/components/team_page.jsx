@@ -1,6 +1,6 @@
 //packages
-import styled, { createGlobalStyle } from "styled-components";
-import { useNavigate, useLocation } from "react-router-dom";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
 //assets, components
@@ -10,33 +10,10 @@ import menuIcon from "../assets/menu.svg";
 import modifyIcon from "../assets/modify_icon.svg";
 import hidingIcon from "../assets/hiding_icon.svg";
 import deleteIcon from "../assets/delete_icon.svg";
-import team_icon from "../assets/default_user_icon.svg";
 import hideIcon from "../assets/hiding_down_icon.svg";
 
-import symbol from "../assets/symbol.svg";
-import home from "../assets/home.svg";
-import in_home from "../assets/in_home.svg";
-import calendar from "../assets/calendar.svg";
-import in_calendar from "../assets/in_calendar.svg";
-import pen from "../assets/pen.svg";
-import in_pen from "../assets/in_pen.svg";
-import chat from "../assets/chat.svg";
-import in_chat from "../assets/in_chat.svg";
-import icon from "../assets/icon.svg";
-import in_icon from "../assets/in_icon.svg";
-import alarm from "../assets/alarm.svg";
-import setting from "../assets/setting.svg";
-import logo from "../assets/logo.svg";
-
 import { GlobalStyle } from "../pages/homePage";
-import { Menu } from "../pages/homePage";
-import { Symbol } from "../pages/homePage";
-import { Logo } from "../pages/homePage";
-import { Item } from "../pages/homePage";
-import { Background } from "../pages/homePage";
-import { Icon } from "../pages/homePage";
-import { Text } from "../pages/homePage";
-import { Line } from "../pages/homePage";
+import MenuLayout from "./menu_layout";
 import { PageLayout } from "./schedule_page";
 import { ContentBox } from "./schedule_page";
 import { formatTeamPeriod } from "../utils/teamDisplay";
@@ -49,10 +26,17 @@ const HeaderBar = styled.header`
   justify-content: space-between;
   width: 100%;
   margin: 10px;
+
+  @media (max-width: 768px) {
+    margin: 0;
+    padding: 16px;
+    gap: 10px;
+    box-sizing: border-box;
+  }
 `;
 const SearchBox = styled.div`
   display: flex;
-  width: 826px;
+  width: min(826px, calc(100% - 220px));
   height: 52px;
   padding: 13px 20px 13px 22px;
   justify-content: center;
@@ -64,6 +48,13 @@ const SearchBox = styled.div`
   border: 1px solid var(--Light-Green-2, #c0da58);
   background: var(--white-1, #fff);
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+
+  @media (max-width: 768px) {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    padding: 12px 14px;
+  }
 `;
 const SearchInput = styled.input`
   width: 90%;
@@ -97,18 +88,33 @@ const JoinButton = styled.button`
   font-style: normal;
   font-weight: 400;
   line-height: normal;
+
+  @media (max-width: 768px) {
+    width: auto;
+    min-width: 92px;
+    margin-right: 0;
+    padding: 0 18px;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
 `;
 const TeamBox = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin: 20px;
+
+  @media (max-width: 768px) {
+    margin: 8px 16px 96px;
+    grid-template-columns: 1fr;
+  }
 `;
 const TeamBarContainer = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 394px;
+  width: 100%;
+  max-width: 394px;
   height: 418px;
   padding: 10px;
   justify-content: center;
@@ -124,6 +130,13 @@ const TeamBarContainer = styled.div`
     border: 1px solid var(--Light-Green-2, #C0DA58);
     background: var(--white-1, #FFF);
     box-shadow: 0 0 30px 2px rgba(192, 218, 88, 0.30), 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 768px) {
+    max-width: none;
+    height: auto;
+    min-height: 320px;
+    padding: 18px 10px;
   }
 `;
 const EllipsisIcon = styled.img`
@@ -186,7 +199,7 @@ const BarWapper = styled.div`
 
 `;
 const ProgressBar = styled.div`
-  width: 290px;
+  width: min(290px, 72vw);
   height: 2px;
   background: #c9c9c8;
   border-radius: 10px;
@@ -239,6 +252,13 @@ const CreateButton = styled.button`
   box-shadow: 0 0 11.9px 2px rgba(0, 0, 0, 0.08);
 
   cursor: pointer;
+
+  @media (max-width: 768px) {
+    right: 18px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    width: 56px;
+    height: 56px;
+  }
 `;
 const CreateIcon = styled.img`
   width: 24px;
@@ -297,6 +317,11 @@ const HideWapper = styled.div`
   align-items: center;
   gap: 6px;
   cursor: pointer;
+
+  @media (max-width: 768px) {
+    left: 18px;
+    bottom: calc(98px + env(safe-area-inset-bottom));
+  }
 `;
 const HideText = styled.span`
   color: var(--Gray-7, #70716F);
@@ -333,15 +358,6 @@ const rememberSelectedTeam = (team) => {
 
 export default function TeamPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const menus = [
-    { path: "/homePage", icon: home, activeIcon: in_home, label: "HOME" },
-    { path: "/schedule", icon: calendar, activeIcon: in_calendar, label: "SCHEDULE" },
-    { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
-    { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
-    { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" }
-];
 
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -424,19 +440,7 @@ export default function TeamPage() {
     <>
       <GlobalStyle />
       <PageLayout>
-        <Menu>
-            <Symbol className="symbol" src={symbol} />
-            <Logo className="logo" src={logo} />
-            {menus.map((m) => (
-                <Item key={m.path} onClick={() => navigate(m.path)}>
-                    <Background $active={location.pathname === m.path} />
-                    <Icon src={location.pathname === m.path ? m.activeIcon : m.icon} />
-                    <Text className="text">{m.label}</Text>
-                </Item>
-            ))}
-            <Line />
-            <Item onClick={() => navigate("/notification")}><Icon src={alarm} /><Text className="text">NOTIFICATIONS</Text></Item>
-        </Menu>
+        <MenuLayout />
         <ContentBox>
           <HeaderBar>
             <SearchBox>

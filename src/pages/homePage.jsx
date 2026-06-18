@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // 이미지 임포트
 import symbol from '../assets/symbol.svg';
 import in_home from '../assets/in_home.svg';
+import home from '../assets/home.svg';
 import calendarIcon from '../assets/calendar.svg';
+import in_calendar from '../assets/in_calendar.svg';
 import pen from '../assets/pen.svg';
+import in_pen from '../assets/in_pen.svg';
 import chat from '../assets/chat.svg';
+import in_chat from '../assets/in_chat.svg';
 import icon from '../assets/icon.svg';
+import in_icon from '../assets/in_icon.svg';
 import alarm from '../assets/alarm.svg'; // 알림 아이콘
-import setting from '../assets/setting.svg';
 import logo from '../assets/logo.svg';
 import profile from '../assets/profile.svg';
 import calendar_left from '../assets/calendar_left.svg';
@@ -26,17 +30,21 @@ import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
 export const GlobalStyle = createGlobalStyle`
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
     * { font-family: "Pretendard Variable", Pretendard, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { width: 100%; min-height: 100%; }
     body { background-color: #FFF; overflow-x: hidden; }
 `;
 
 /* --- Styled Components (생략 없이 유지) --- */
 export const Menu = styled.div`
-    height: 100vh; width: 130px; background-color: #F9F9F8; transition: 0.3s ease-in-out;
+    height: 100vh; height: 100dvh; width: 130px; background-color: #F9F9F8; transition: 0.3s ease-in-out;
     display: flex; flex-direction: column; align-items: center; position: fixed; z-index: 10;
     &:hover { width: 300px; }
     &:hover .text { opacity: 1; transform: translateX(0); }
     &:hover .symbol { display: none; }
     &:hover .logo { display: block; }
+    @media (max-width: 768px) {
+        display: none;
+    }
 `;
 export const Symbol = styled.img` height: 70px; width: 62px; margin-top: 65px; margin-bottom: 50px; `;
 export const Logo = styled.img` width: 132px; height: 65px; margin-top: 65px; margin-bottom: 50px; display: none; `;
@@ -59,10 +67,62 @@ export const Text = styled.span`
 `;
 export const Line = styled.div` width: 60px; height: 1px; background-color: #E5E5E5; margin: 30px 0; transition: 0.3s; ${Menu}:hover & { width: 240px; } `;
 
-const Container = styled.div` display: flex; width: 100vw; height: 100vh; `;
-const MainContent = styled.div` flex: 1; margin-left: 130px; display: grid; grid-template-columns: 380px 1fr; height: 100vh; `;
-const LeftPanel = styled.div` border-right: 1px solid #EDEDED; padding: 60px 35px; display: flex; flex-direction: column; overflow-y: auto; `;
-const MiddlePanel = styled.div` padding: 60px 80px; overflow-y: auto; `;
+const Container = styled.div`
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    @media (max-width: 768px) {
+        display: block;
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+        overflow-x: hidden;
+    }
+`;
+const MainContent = styled.div`
+    flex: 1;
+    margin-left: 130px;
+    display: grid;
+    grid-template-columns: 380px minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+`;
+const LeftPanel = styled.div`
+    border-right: 1px solid #EDEDED;
+    padding: 60px 35px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+        border-right: 0;
+        border-bottom: 1px solid #EDEDED;
+        padding: calc(24px + env(safe-area-inset-top)) 20px 24px;
+        overflow: visible;
+    }
+`;
+const MiddlePanel = styled.div`
+    padding: 60px 80px;
+    overflow-y: auto;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+        padding: 28px 20px 24px;
+        overflow: visible;
+    }
+`;
 
 /* --- Mini Calendar & UI Components --- */
 const toDateKey = (date) => {
@@ -140,7 +200,27 @@ const MiniCalendar = ({ currentViewDate, setCurrentViewDate, calendarMarks }) =>
 
 const Card = styled.div` background: #FFF; border: 1px solid #F3F3F3; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 20px; margin-top: 15px; `;
 const CardDate = styled.div` font-size: 20px; font-weight: 700; color: #C0DA58; `;
-const WeeklyNav = styled.div` display: flex; align-items: center; justify-content: space-between; margin: 30px 0; padding-bottom: 30px; border-bottom: 1px solid #F0F0F0; `;
+const WeeklyNav = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 30px 0;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #F0F0F0;
+
+    @media (max-width: 768px) {
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+`;
 const DayItem = styled.div` display: flex; flex-direction: column; align-items: center; gap: 8px; `;
 const DayNum = styled.span` font-size: 18px; font-weight: 600; color: ${p => p.$active ? "#C0DA58" : "#BBB"}; `;
 const DayDot = styled.div` width: 5px; height: 5px; background-color: #C0DA58; border-radius: 50%; visibility: ${p => p.$has ? "visible" : "hidden"}; `;
@@ -148,13 +228,80 @@ const TaskHeader = styled.div` display: flex; align-items: center; gap: 10px; ma
     .plus { width: 26px; height: 26px; border-radius: 50%; background: #F0F0F0; color: #777; font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; } `;
 const ActionPopup = styled.div` position: absolute; left: 145px; top: 0; background: #FFF; border: 1px solid #EEE; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; padding: 8px; z-index: 20; min-width: 100px; `;
 const ActionItem = styled.div` display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; color: #555; &:hover { background: #F9F9F8; } img { width: 16px; height: 16px; } `;
-const TaskRow = styled.div` display: flex; align-items: center; margin-bottom: 18px; `;
+const TaskRow = styled.div`
+    display: flex;
+    align-items: center;
+    margin-bottom: 18px;
+    min-width: 0;
+
+    span {
+        overflow-wrap: anywhere;
+        text-align: left;
+    }
+`;
 const CustomCheckBox = styled.div` width: 20px; height: 20px; border-radius: 6px; margin-right: 15px; cursor: pointer; background-color: ${p => p.$deleteMode ? "#FF6B6B" : p.$checked ? "#C0DA58" : "#E2E2E2"}; transition: 0.2s; `;
 const EditInput = styled.input` border: none; border-bottom: 1px solid #C0DA58; outline: none; font-size: 17px; font-weight: 500; width: 100%; `;
 const EmptyText = styled.div` color: #AAA; font-size: 15px; margin: 8px 0 18px; `;
+const BottomTabBar = styled.nav`
+    display: none;
+
+    @media (max-width: 768px) {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(64px + env(safe-area-inset-bottom));
+        padding: 0 4px env(safe-area-inset-bottom);
+        background-color: #F9F9F8;
+        border-top: 1px solid #E5E5E5;
+        z-index: 30;
+        align-items: center;
+        justify-content: space-around;
+    }
+`;
+const TabItem = styled.button`
+    display: flex;
+    flex: 1;
+    height: 64px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+`;
+const TabActiveBar = styled.div`
+    position: absolute;
+    top: 0;
+    width: 24px;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: ${({ $active }) => ($active ? "#c0da58" : "transparent")};
+`;
+const TabIcon = styled.img`
+    width: 22px;
+    height: 22px;
+`;
+const TabText = styled.span`
+    color: ${({ $active }) => ($active ? "#90a442" : "#AAA")};
+    font-size: 9px;
+    font-weight: 500;
+    white-space: nowrap;
+`;
 
 export default function HomePage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const mobileMenus = [
+        { path: "/homepage", icon: home, activeIcon: in_home, label: "HOME" },
+        { path: "/schedule", icon: calendarIcon, activeIcon: in_calendar, label: "SCHEDULE" },
+        { path: "/project", icon: pen, activeIcon: in_pen, label: "PROJECT" },
+        { path: "/chat", icon: chat, activeIcon: in_chat, label: "CHATTING" },
+        { path: "/mypage", icon: icon, activeIcon: in_icon, label: "MY PAGE" },
+    ];
     const [currentViewDate, setCurrentViewDate] = useState(new Date());
     const [weekStartDate, setWeekStartDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d; });
 
@@ -366,6 +513,23 @@ export default function HomePage() {
                     ))}
                 </MiddlePanel>
             </MainContent>
+            <BottomTabBar>
+                {mobileMenus.map((menu) => {
+                    const isActive = location.pathname.toLowerCase() === menu.path.toLowerCase();
+                    return (
+                        <TabItem key={menu.path} type="button" onClick={() => navigate(menu.path)}>
+                            <TabActiveBar $active={isActive} />
+                            <TabIcon src={isActive ? menu.activeIcon : menu.icon} alt="" />
+                            <TabText $active={isActive}>{menu.label}</TabText>
+                        </TabItem>
+                    );
+                })}
+                <TabItem type="button" onClick={() => navigate("/notification")}>
+                    <TabActiveBar $active={location.pathname === "/notification"} />
+                    <TabIcon src={alarm} alt="" />
+                    <TabText $active={location.pathname === "/notification"}>ALARM</TabText>
+                </TabItem>
+            </BottomTabBar>
         </Container>
     );
 }
