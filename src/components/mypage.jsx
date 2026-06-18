@@ -195,6 +195,9 @@ const Input = styled.input`
     font-size: 15px;
     outline: none;
     box-sizing: border-box; /* ⭐️ 추가 */
+    -webkit-appearance: none;
+    appearance: none;
+    background: #fff;
     
     &:focus {
         border-color: #c0da58;

@@ -61,6 +61,16 @@ const SearchInput = styled.input`
   height: 100%;
   border: none;
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none;
+  }
 `;
 const SearchIcon = styled.img`
   width: 24px;

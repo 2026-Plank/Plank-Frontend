@@ -54,6 +54,16 @@ export const SearchBox = styled.input`
     width: 330px;
     border: none;
     outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+
+    &::-webkit-search-decoration,
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-results-button,
+    &::-webkit-search-results-decoration {
+        display: none;
+    }
 
     @media (max-width: 768px) {
         width: 100%;

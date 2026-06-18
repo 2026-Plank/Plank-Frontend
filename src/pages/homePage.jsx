@@ -32,6 +32,17 @@ export const GlobalStyle = createGlobalStyle`
     * { font-family: "Pretendard Variable", Pretendard, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #root { width: 100%; min-height: 100%; }
     body { background-color: #FFF; overflow-x: hidden; }
+    input[type="search"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: transparent;
+    }
+    input[type="search"]::-webkit-search-decoration,
+    input[type="search"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-results-button,
+    input[type="search"]::-webkit-search-results-decoration {
+        display: none;
+    }
 `;
 
 /* --- Styled Components (생략 없이 유지) --- */
