@@ -269,7 +269,7 @@ export default function ChatInfo() {
 
                       <UserBox>
                           {chatList.map((item) => (
-                          <ChatItem key={item.id} onClick={() => navigate("/chat-info", { state: { selectedChat: item, chatList } })}>
+                          <ChatItem key={item.id} onClick={() => navigate("/chatinfo", { state: { selectedChat: item, chatList } })}>
                               <ChatItemIconWrapper>
                               <UserIcon $size={60} src={user_icon} />
                               </ChatItemIconWrapper>
