@@ -21,9 +21,6 @@ import calendar_left from '../assets/calendar_left.svg';
 import calendar_right from '../assets/calendar_right.svg';
 import week_left from '../assets/week_left.svg';
 import week_right from '../assets/week_right.svg';
-import addIcon from '../assets/add.svg';
-import editIcon from '../assets/edit.svg';
-import deleteIcon from '../assets/delete.svg';
 import { apiRequest, mapApiTeam } from "../utils/api";
 import { calculateProgress, loadProjectTasks } from "../utils/projectTasks";
 
@@ -237,8 +234,6 @@ const DayNum = styled.span` font-size: 18px; font-weight: 600; color: ${p => p.$
 const DayDot = styled.div` width: 5px; height: 5px; background-color: #C0DA58; border-radius: 50%; visibility: ${p => p.$has ? "visible" : "hidden"}; `;
 const TaskHeader = styled.div` display: flex; align-items: center; gap: 10px; margin-bottom: 25px; position: relative; h3 { font-size: 22px; font-weight: 700; } 
     .plus { width: 26px; height: 26px; border-radius: 50%; background: #F0F0F0; color: #777; font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; } `;
-const ActionPopup = styled.div` position: absolute; left: 145px; top: 0; background: #FFF; border: 1px solid #EEE; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; padding: 8px; z-index: 20; min-width: 100px; `;
-const ActionItem = styled.div` display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; color: #555; &:hover { background: #F9F9F8; } img { width: 16px; height: 16px; } `;
 const TaskRow = styled.div`
     display: flex;
     align-items: center;
@@ -250,8 +245,7 @@ const TaskRow = styled.div`
         text-align: left;
     }
 `;
-const CustomCheckBox = styled.div` width: 20px; height: 20px; border-radius: 6px; margin-right: 15px; cursor: pointer; background-color: ${p => p.$deleteMode ? "#FF6B6B" : p.$checked ? "#C0DA58" : "#E2E2E2"}; transition: 0.2s; `;
-const EditInput = styled.input` border: none; border-bottom: 1px solid #C0DA58; outline: none; font-size: 17px; font-weight: 500; width: 100%; `;
+const CustomCheckBox = styled.div` width: 20px; height: 20px; border-radius: 6px; margin-right: 15px; cursor: pointer; background-color: ${p => p.$checked ? "#C0DA58" : "#E2E2E2"}; transition: 0.2s; `;
 const EmptyText = styled.div` color: #AAA; font-size: 15px; margin: 8px 0 18px; `;
 const BottomTabBar = styled.nav`
     display: none;
@@ -315,12 +309,6 @@ export default function HomePage() {
     ];
     const [currentViewDate, setCurrentViewDate] = useState(new Date());
     const [weekStartDate, setWeekStartDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d; });
-
-    const [openPopup, setOpenPopup] = useState(null);
-    const [editMode, setEditMode] = useState(null);
-    const [deleteMode, setDeleteMode] = useState(null);
-    const [addingTo, setAddingTo] = useState(null);
-    const [editingId, setEditingId] = useState(null);
 
     const [profileInfo, setProfileInfo] = useState({ name: "사용자", job: "" });
     const [calendarMarks, setCalendarMarks] = useState({});
@@ -396,12 +384,6 @@ export default function HomePage() {
     });
 
     const handleBoxClick = async (id, section) => {
-        if (deleteMode === section) {
-            if (section === 'project') setProjects(projects.filter(p => p.id !== id));
-            else setTodos(todos.filter(t => t.id !== id));
-            return;
-        }
-
         if (section === 'project') return;
 
         const target = todos.find((todo) => todo.id === id);
@@ -425,23 +407,8 @@ export default function HomePage() {
         }
     };
 
-    const handleTextClick = (id, section) => { if (editMode === section) setEditingId(id); };
-    const handleEditComplete = (id, newText, section) => {
-        if (section === 'project') setProjects(projects.map(p => p.id === id ? { ...p, text: newText } : p));
-        else setTodos(todos.map(t => t.id === id ? { ...t, text: newText } : t));
-        setEditingId(null);
-    };
-    const handleAddItem = (e, section) => {
-        if (e.key === 'Enter' && e.target.value.trim()) {
-            const newItem = { id: Date.now(), text: e.target.value, checked: false };
-            if (section === 'project') setProjects([...projects, newItem]);
-            else setTodos([...todos, newItem]);
-            setAddingTo(null);
-        }
-    };
-
     return (
-        <Container onClick={() => {setOpenPopup(null); setEditMode(null); setDeleteMode(null); setAddingTo(null); setEditingId(null);}}>
+        <Container>
             <GlobalStyle />
             <Menu onClick={(e) => e.stopPropagation()}>
                 <Symbol className="symbol" src={symbol} />
@@ -489,14 +456,13 @@ export default function HomePage() {
                         <div key={section} style={{marginTop: 40}}>
                             <TaskHeader onClick={(e) => e.stopPropagation()}>
                                 <h3>{section.toUpperCase()}</h3>
-                                <button className="plus" onClick={() => setOpenPopup(openPopup === section ? null : section)}>+</button>
-                                {openPopup === section && (
-                                    <ActionPopup>
-                                        <ActionItem onClick={() => { setAddingTo(section); setOpenPopup(null); }}><img src={addIcon} alt="" />추가</ActionItem>
-                                        <ActionItem onClick={() => { setEditMode(section); setOpenPopup(null); }}><img src={editIcon} alt="" />수정</ActionItem>
-                                        <ActionItem onClick={() => { setDeleteMode(section); setOpenPopup(null); }}><img src={deleteIcon} alt="" />삭제</ActionItem>
-                                    </ActionPopup>
-                                )}
+                                <button
+                                    className="plus"
+                                    type="button"
+                                    onClick={() => navigate(section === 'project' ? "/project" : "/schedule")}
+                                >
+                                    +
+                                </button>
                             </TaskHeader>
                             {loadError && section === 'project' && <EmptyText>{loadError}</EmptyText>}
                             {!loadError && (section === 'project' ? projects : todos).length === 0 && (
@@ -505,21 +471,11 @@ export default function HomePage() {
                             {(section === 'project' ? projects : todos).map(item => (
                                 <TaskRow key={item.id} onClick={(e) => e.stopPropagation()}>
                                     {section === 'todo' && (
-                                        <CustomCheckBox $checked={item.checked} $deleteMode={deleteMode === section} onClick={() => handleBoxClick(item.id, section)} />
+                                        <CustomCheckBox $checked={item.checked} onClick={() => handleBoxClick(item.id, section)} />
                                     )}
-                                    {editingId === item.id ? (
-                                        <EditInput autoFocus defaultValue={item.text} onKeyDown={(e) => e.key === 'Enter' && handleEditComplete(item.id, e.target.value, section)} onBlur={(e) => handleEditComplete(item.id, e.target.value, section)} />
-                                    ) : (
-                                        <span style={{ fontSize: 17, fontWeight: 500, cursor: editMode === section ? 'text' : 'default' }} onClick={() => handleTextClick(item.id, section)}>{item.text}</span>
-                                    )}
+                                    <span style={{ fontSize: 17, fontWeight: 500 }}>{item.text}</span>
                                 </TaskRow>
                             ))}
-                            {addingTo === section && (
-                                <TaskRow onClick={(e) => e.stopPropagation()}>
-                                    {section === 'todo' && <CustomCheckBox $checked={false} />}
-                                    <EditInput autoFocus placeholder="내용을 입력하세요..." onKeyDown={(e) => handleAddItem(e, section)} />
-                                </TaskRow>
-                            )}
                         </div>
                     ))}
                 </MiddlePanel>
